@@ -1,20 +1,26 @@
 Package: gdi
 Title: Integration of genomic and epigenomic data
-Version: 1.0
+Version: 0.1
 Date: 2014-05-21
 Author: Paul Manser <manserpt@vcu.edu>
 Maintainer: Paul Manser <manserpt@vcu.edu>
-Description: Provides classes and functions for integrative analysis
+Description: Provides classes and functions for integrative analyses
 License: MIT
-Collate: generics.R GDset.R GDIset.R ccaTest.R
-Depends: 
- stats,
- matrixStats,
- methods,
- dplyr,
- gsubfn,
- org.Hs.eg.db,
- GenomicRanges,
- AnnotationHub,
- GenomicFeatures
+Collate: generics.R 
+         GDset.R 
+         GDIset.R 
+         ccaTest.R
+         permTest.R
+         annotateGRanges.R
+Depends: stats,
+         methods,
+         matrixStats,
+         dplyr,
+         gsubfn,
+         org.Hs.eg.db,
+         GenomicRanges,
+         AnnotationHub,
+         GenomicFeatures,
+         VariantAnnotation,
+         TxDb.Hsapiens.UCSC.hg19.knownGene
 Suggests: testthat
