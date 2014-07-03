@@ -21,6 +21,5 @@ Depends: stats,
          GenomicRanges,
          AnnotationHub,
          GenomicFeatures,
-         VariantAnnotation,
          TxDb.Hsapiens.UCSC.hg19.knownGene
 Suggests: testthat
