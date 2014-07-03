@@ -20,7 +20,7 @@ setClass("GDset",
   md <- mcols(object@annot)
   if (!all(names(annot.req) %in% names(md))) {
     stop("GDset slot 'annot' must contain all of the following columns:\n", 
-         paste(names(columns.req), collapse = "\n"), call. = FALSE)
+         paste(names(annot.req), collapse = "\n"), call. = FALSE)
   }
   
   # Check that annotation matches data
@@ -102,6 +102,4 @@ setMethod("show", "GDset", function(object) {
 setMethod("dim", "GDset", function(x){
   c(loci = nrow(x@dat), samples = ncol(x@dat))
 })
-
-
 
