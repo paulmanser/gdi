@@ -6,20 +6,22 @@ Author: Paul Manser <manserpt@vcu.edu>
 Maintainer: Paul Manser <manserpt@vcu.edu>
 Description: Provides classes and functions for integrative analyses
 License: MIT
+Depends: stats,
+         methods,
+         matrixStats,
+         org.Hs.eg.db,
+         GenomicRanges,
+         AnnotationHub,
+         GenomicFeatures,
+         TxDb.Hsapiens.UCSC.hg19.knownGene,
+         ff,
+         ffbase,
+         doBy
 Collate: generics.R 
          GDset.R 
          GDIset.R 
          ccaTest.R
          permTest.R
          annotateGRanges.R
-Depends: stats,
-         methods,
-         matrixStats,
-         dplyr,
-         gsubfn,
-         org.Hs.eg.db,
-         GenomicRanges,
-         AnnotationHub,
-         GenomicFeatures,
-         TxDb.Hsapiens.UCSC.hg19.knownGene
+         GDIplot.R
 Suggests: testthat

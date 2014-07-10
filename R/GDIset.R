@@ -45,17 +45,17 @@ setMethod("getAnnot", "GDIset", function(object){
 setMethod("[", c("GDIset", "ANY", "ANY"), function(x, i, j, ..., drop = FALSE){
   
   if (!is(i, 'character'))
-    stop('Row index must be a list of entrez ids')
+    stop('Row index must be a vector of entrez ids')
   
   GDset1 <- new("GDset", 
                 annot = x@set1@annot[which(x@set1@annot$entrez.id %in% i)],
-                dat = x@set1@dat[which(x@set1@annot$entrez.id %in% i), j, drop=FALSE],
+                dat = as.ffdf(x@set1@dat[which(x@set1@annot$entrez.id %in% i), j, drop=FALSE]),
                 pheno = x@set1@pheno[j, , drop=FALSE],
                 platform = x@set1@platform)
  
   GDset2 <- new("GDset", 
                 annot = x@set2@annot[which(x@set2@annot$entrez.id %in% i)],
-                dat = x@set2@dat[which(x@set2@annot$entrez.id %in% i), j, drop=FALSE],
+                dat = as.ffdf(x@set2@dat[which(x@set2@annot$entrez.id %in% i), j, drop=FALSE]),
                 pheno = x@set2@pheno[j, , drop=FALSE],
                 platform = x@set2@platform)
   
@@ -66,13 +66,13 @@ setMethod("[", c("GDIset", "missing", "ANY"), function(x, i, j, ..., drop = FALS
   
   GDset1 <- new("GDset", 
                 annot = x@set1@annot,
-                dat = x@set1@dat[ , j, drop=FALSE],
+                dat = as.ffdf(x@set1@dat[ , j, drop=FALSE]),
                 pheno = x@set1@pheno[j, , drop=FALSE],
                 platform = x@set1@platform)
   
   GDset2 <- new("GDset", 
                 annot = x@set2@annot,
-                dat = x@set2@dat[ , j, drop=FALSE],
+                dat = as.ffdf(x@set2@dat[ , j, drop=FALSE]),
                 pheno = x@set2@pheno[j, , drop=FALSE],
                 platform = x@set2@platform)
   
@@ -86,13 +86,13 @@ setMethod("[", c("GDIset", "ANY", "missing"), function(x, i, j, ..., drop = FALS
   
   GDset1 <- new("GDset", 
                 annot = x@set1@annot[which(x@set1@annot$entrez.id %in% i)],
-                dat = x@set1@dat[which(x@set1@annot$entrez.id %in% i), , drop=FALSE],
+                dat = as.ffdf(x@set1@dat[which(x@set1@annot$entrez.id %in% i), , drop=FALSE]),
                 pheno = x@set1@pheno[ , , drop=FALSE],
                 platform = x@set1@platform)
   
   GDset2 <- new("GDset", 
                 annot = x@set2@annot[which(x@set2@annot$entrez.id %in% i)],
-                dat = x@set2@dat[which(x@set2@annot$entrez.id %in% i),  , drop=FALSE],
+                dat = as.ffdf(x@set2@dat[which(x@set2@annot$entrez.id %in% i),  , drop=FALSE]),
                 pheno = x@set2@pheno[ , , drop=FALSE],
                 platform = x@set2@platform)
   
@@ -143,21 +143,16 @@ consolidate <- function(object){
   set2.dat <- object@set2@dat[set2.include, ]
   set2.annot <- object@set2@annot[set2.include, ]
   
-  GDset1 <- GDset(dat = set1.dat, annot = set1.annot,
+  GDset1 <- GDset(dat = as.ffdf(set1.dat),
+                  annot = set1.annot,
                   pheno = object@set1@pheno,
                   platform = object@set1@platform)
   
-  GDset2 <- GDset(dat = set2.dat, annot = set2.annot,
+  GDset2 <- GDset(dat = as.ffdf(set2.dat),
+                  annot = set2.annot,
                   pheno = object@set2@pheno,
                   platform = object@set2@platform)
   
   GDIset(GDset1, GDset2)   
 }
-
-
-
-
-
-
-
 

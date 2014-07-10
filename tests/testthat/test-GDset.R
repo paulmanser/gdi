@@ -13,6 +13,9 @@ row.names(expData) <- c('probe1', 'probe2')
 pData <- data.frame(batch = 1:4, region = rep(c("DFC", "CBC"), each=2))
 rownames(pData) <- colnames(expData)
 
+options(fftempdir = 'C:/Users/pmanser/Documents/gdi')
+expData <- as.ffdf(expData)
+
 GDset.test <- GDset(annot = annot, dat = expData, 
                     pheno = pData, platform = "microarray")
 
@@ -42,7 +45,7 @@ test_that("'getAnnot' accessor", {
 })
 
 test_that("'getDat' accessor", {
-  expect_that(getDat(GDset.test), equals(expData))
+  expect_that(identical(getDat(GDset.test), expData), equals(TRUE))
 })
 
 test_that("'getPheno' accessor", {

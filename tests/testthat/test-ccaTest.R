@@ -13,9 +13,11 @@ expData <- data.frame(sample1 = rnorm(10) + 1:10, sample2 = rnorm(10) + 1:10,
                       sample7 = rnorm(10), sample8 = rnorm(10))
 
 row.names(expData) <- names(annot)
+expData <- as.ffdf(expData)
 
 pData <- data.frame(batch = rep(1:4, 2), 
                     region = rep(c("DFC", "CBC"), each=4))
+pData <- pData
 
 rownames(pData) <- colnames(expData)
 
@@ -25,6 +27,8 @@ GDset1 <- GDset(annot = annot, dat = expData,
 annot2 <- annot[1:7]
 expData2 <- expData[1:7, ]
 expData2 <- expData2 + rnorm(length(expData2))*3
+expData2 <- as.ffdf(expData2)
+
 GDset2 <- GDset(annot = annot2, dat = expData2,
                 pheno = pData, platform = 'methy')
 

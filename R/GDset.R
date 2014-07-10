@@ -3,12 +3,12 @@
 
 #' @exportClass GDset 
 setClass("GDset",
-         slots = c(dat = 'data.frame',
+         slots = c(dat = 'ffdf',
                    annot = "GRanges",
                    pheno = 'data.frame',
                    platform = "character"
                    ))
-
+setOldClass('ffdf')
 # Validate ----------------------------------------------------------------
 
 .validGDset <- function(object) {
@@ -32,7 +32,7 @@ setClass("GDset",
   if (!identical(colnames(object@dat), rownames(object@pheno))){
     stop("colnames of 'dat' must match rownames of 'pheno'")
   }
-    
+     
   return(TRUE)
 }
 
@@ -65,7 +65,7 @@ setMethod("getDat", "GDset", function(object) object@dat)
 setMethod("[", c("GDset", "ANY", "ANY"),
           function(x, i, j, ..., drop = FALSE){
             new("GDset", annot = x@annot[i], 
-                dat = x@dat[i, j, drop=FALSE],
+                dat = as.ffdf(x@dat[i, j, drop=FALSE]),
                 pheno = x@pheno[j, , drop=FALSE], 
                 platform = x@platform)  
           })
@@ -73,7 +73,7 @@ setMethod("[", c("GDset", "ANY", "ANY"),
 setMethod("[", c("GDset", "missing", "ANY"),
           function(x, i, j, ..., drop = FALSE){
             new("GDset", annot = x@annot, 
-                dat = x@dat[ , j, drop=FALSE],
+                dat = as.ffdf(x@dat[ , j, drop=FALSE]),
                 pheno = x@pheno[j, , drop=FALSE], 
                 platform = x@platform)  
           })
@@ -81,7 +81,7 @@ setMethod("[", c("GDset", "missing", "ANY"),
 setMethod("[", c("GDset", "ANY", "missing"),
           function(x, i, j, ..., drop = FALSE){
             new("GDset", annot = x@annot[i], 
-                dat = x@dat[i, , drop=FALSE],
+                dat = as.ffdf(x@dat[i, , drop=FALSE]),
                 pheno = x@pheno[, , drop=FALSE], 
                 platform = x@platform)  
           })

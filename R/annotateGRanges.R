@@ -1,10 +1,12 @@
 
 
-annotateGRanges <- function(gr, txdb=TxDb.Hsapiens.UCSC.hg19.knownGene){
+annotateGRanges <- function(gr){
   
   if (!is(gr, 'GenomicRanges'))
     stop("'gr' must be a 'GenomicRanges' object")
   
+  txdb <- TxDb.Hsapiens.UCSC.hg19.knownGene
+
   # get exon to gene_id key
   exons <- unlist(exonsBy(txdb, "gene"))
   exon2gene <- names(exons)
@@ -36,9 +38,9 @@ annotateGRanges <- function(gr, txdb=TxDb.Hsapiens.UCSC.hg19.knownGene){
   utr.by.gene$gene_id <- names(utr.by.gene)
   utr.by.gene$location <- "5UTR"
   utr5 <- utr.by.gene
-  
+   
   # promoters -------------------------------------------
-  proms <- promoters(txdb, upstream=2000, downstream=0)
+  proms <- promoters(txdb, upstream=3000, downstream=100)
   gene.ids <- tx2gene[as.character(proms$tx_id)]
   proms$gene_id <- gene.ids
   proms <- proms[-which(is.na(gene.ids))]
@@ -47,12 +49,12 @@ annotateGRanges <- function(gr, txdb=TxDb.Hsapiens.UCSC.hg19.knownGene){
   prom.by.gene$gene_id <- names(prom.by.gene)
   prom.by.gene$location <- "Promoter"
   proms <- prom.by.gene
-  
+   
   # coding ----------------------------------------------
   cds <- unlist(reduce(cdsBy(txdb, "gene")))
   cds$gene_id <- names(cds)
   cds$location <- "Coding"
-  
+   
   # intron ----------------------------------------------
   introns <- unlist(intronsByTranscript(txdb))
   gene.ids <- tx2gene[as.character(names(introns))]
@@ -93,5 +95,6 @@ annotateGRanges <- function(gr, txdb=TxDb.Hsapiens.UCSC.hg19.knownGene){
   annotatedRanges$location[as.numeric(names(chr.locs))] <- chr.locs
   strand(annotatedRanges)[as.numeric(names(chr.strand))] <- chr.strand
   
+  annotatedRanges
 }
 
