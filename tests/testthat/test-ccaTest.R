@@ -25,6 +25,7 @@ GDset1 <- GDset(annot = annot, dat = expData,
 annot2 <- annot[1:7]
 expData2 <- expData[1:7, ]
 expData2 <- expData2 + rnorm(length(expData2))*3
+expData2[1:5, ] <- rnorm(40)
 GDset2 <- GDset(annot = annot2, dat = expData2,
                 pheno = pData, platform = 'methy')
 
