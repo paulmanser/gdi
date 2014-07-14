@@ -1,6 +1,6 @@
 
 
-permTest <- function(object, min.set1 = 5, min.set2 = 1, n.perm = 1000, lambda = 300){
+permTest <- function(object, min.set1 = 5, min.set2 = 3, n.perm = 1000, lambda = 300){
 
   if (!is(object, 'GDIset')) stop("object must be a 'GDIset'")
   
@@ -10,18 +10,18 @@ permTest <- function(object, min.set1 = 5, min.set2 = 1, n.perm = 1000, lambda =
   set1.df[is.na(set1.df)] <- 0
   set2.df[is.na(set2.df)] <- 0
   
-  # create data.frames for dplyr do()
+  # create data.frames for split/apply
   set1.df <- data.frame(start = start(object@set1@annot),
                         end = end(object@set1@annot),
                         entrez.id = factor(object@set1@annot$entrez.id), 
-                        type = factor(rep('set1', nrow(set1.dat))),
-                        set1.dat)
+                        type = factor(rep('set1', nrow(set1.df))),
+                        set1.df)
   
   set2.df <- data.frame(start = start(object@set2@annot),
                         end = end(object@set2@annot),
                         entrez.id = factor(object@set2@annot$entrez.id), 
-                        type = factor(rep('set2', nrow(set2.dat))),
-                        set2.dat)
+                        type = factor(rep('set2', nrow(set2.df))),
+                        set2.df)
   
   int.df <- rbind(set1.df, set2.df) 
   
@@ -32,7 +32,8 @@ permTest <- function(object, min.set1 = 5, min.set2 = 1, n.perm = 1000, lambda =
   int.dist <- mclapply(split(int.df, int.df$entrez.id), get.int.dist, lambda=lambda)
   
   # permute!
-  mapply(permute.weights, int.cov2, int.dist, n.perm = n.perm)  
+  perm.list <- mapply(int.cov2, int.dist, FUN=list, SIMPLIFY=FALSE)
+  mclapply(perm.list, permute.weights, n.perm = n.perm)  
 
 }
 
@@ -61,7 +62,10 @@ get.int.dist <- function(x, lambda){
   
 }
 
-permute.weights <- function(r2, weights, n.perm){
+permute.weights <- function(r2.dist, n.perm){
+  
+  r2 <- r2.dist[[1]]
+  weights <- r2.dist[[2]]
   
   perm.stats <- numeric(n.perm)
   orig.stat <- sum(r2 * weights)
