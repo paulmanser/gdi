@@ -68,10 +68,3 @@ cc.redundancy <- function(cc.res, pca.res1, pca.res2, set1.df, set2.df){
   return(out)
 }
 
-# replace NAs with mean for now
-na.replace <- function(x){
-  x.mean <- mean(na.omit(x))
-  x[is.na(x)] <- x.mean
-  return(x)
-}
-
