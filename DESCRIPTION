@@ -12,6 +12,7 @@ Collate: generics.R
          ccaTest.R
          permTest.R
          annotateGRanges.R
+         GDIplot.R
 Depends: stats,
          methods,
          matrixStats,
