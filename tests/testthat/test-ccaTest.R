@@ -1,5 +1,5 @@
 context("Testing ccaTest function")
-
+options("fftempdir"=getwd())
 # create components to test GDset creation
 annot <- GRanges(seqnames = Rle(rep(c('chr1', 'chr8'), each=5)),
                  ranges = IRanges(start = 1:10, end = 4*(1:10)+10),
@@ -26,7 +26,7 @@ GDset1 <- GDset(annot = annot, dat = expData,
 
 annot2 <- annot[1:7]
 expData2 <- expData[1:7, ]
-expData2 <- expData2 + rnorm(length(expData2))*3
+expData2 <- expData2 + rnorm(length(expData2))*4.2
 expData2 <- as.ffdf(expData2)
 
 GDset2 <- GDset(annot = annot2, dat = expData2,
@@ -34,7 +34,11 @@ GDset2 <- GDset(annot = annot2, dat = expData2,
 
 GDIset.test <- GDIset(GDset1, GDset2)
 
+
 ccaTest(GDIset.test)
+
+
+
 
 test_that("'ccaTest' returns list", {
   expect_that(class(ccaTest(GDIset.test)), equals("list"))

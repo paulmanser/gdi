@@ -7,24 +7,24 @@ ccaTest <- function(object, npcs = 3){
   
   # center and replace NAs with zero for now -------------------------
   mean.center <- function(x){
-    z <- scale(x, scale=FALSE)
+    z <- scale(x[-length(x)], scale=FALSE)
     z[is.na(z)] <- 0
-    z
+    as.data.frame(z)
   }
-
-  # need to make ffappply return ff object
-  set1.dat <- t(ffapply(X=object@set1@dat, MARGIN=1, AFUN="mean.center", 
-                        CFUN='ccbind', RETURN=TRUE))
-  entrez.id1 <- as.character(object@set1@annot$entrez.id)
-  set1.dat <- as.ffdf(data.frame(set1.dat, entrez.id=entrez.id1))
   
-  set2.dat <- t(ffapply(X=object@set2@dat, MARGIN=1, AFUN="mean.center", 
-                      RETURN=TRUE, CFUN='crbind'))
-  entrez.id2 <- as.character(object@set2@annot$entrez.id)
-  set2.dat <- as.ffdf(data.frame(set2.dat, entrez.id=entrez.id2))
+  set1.df <- object@set1@dat
+  set1.df$dummy <- ff(factor(1:nrow(set1.df)))
+  set1.df <- ffdfdply(x=set1.df, split=set1.df$dummy, BATCHBYTES=5e5,
+                      FUN=mean.center, trace=FALSE)
+  set1.df$entrez.id <- ff(factor(object@set1@annot$entrez.id))
+  
+  set2.df <- object@set2@dat
+  set2.df$dummy <- ff(factor(1:nrow(set2.df)))
+  set2.df <- ffdfdply(x=set2.df, split=set2.df$dummy, BATCHBYTES=5e5,
+                      FUN=mean.center, trace=FALSE)
+  set2.df$entrez.id <- ff(factor(object@set2@annot$entrez.id))
   
   # do PCA grouped by gene -------------------------------------------
-  # PM: maybe try to speed this step up
   pc2 <- function(x){
     z <- prcomp(t(x[, (-ncol(x))]))$x[ , 1:min(npcs, nrow(x))]
     as.data.frame(z)
@@ -33,45 +33,61 @@ ccaTest <- function(object, npcs = 3){
   pc3 <- function(x) as.data.frame(lapplyBy(~entrez.id, data=x, pc2))
   
   # get PC scores for set 1
-  set1.pca <- ffdfdply(x=set1.dat, 
-                       split=set1.dat$entrez.id,
-                       BATCHBYTES=5e5,
-                       FUN=pc3, trace=FALSE)
+  set1.pca <- ffdfdply(x=set1.df, split=set1.df$entrez.id,
+                       BATCHBYTES=5e5, FUN=pc3, trace=FALSE)
   
   # get PC scores for set 2
-  set2.pca <- ffdfdply(x=set2.dat,
-                       split=set2.dat$entrez.id,
-                       BATCHBYTES=5e5,
-                       FUN=pc3, trace=FALSE)
+  set2.pca <- ffdfdply(x=set2.df, split=set2.df$entrez.id,
+                       BATCHBYTES=5e5, FUN=pc3, trace=FALSE)
 
+  # split PC scores by entrez id
   get.entrez <- function(x) strsplit(x, '\\.')[[1]][1]
   
-  set1.pca.list <- as.data.frame(t(as.data.frame(set1.pca)))
-  set1.pca.list <- split(set1.pca.list, 
-                         sapply(rownames(set1.pca.list), get.entrez))
-    
-  set2.pca.list <- as.data.frame(t(as.data.frame(set1.pca)))
-  set2.pca.list <- split(set2.pca.list,
-                         sapply(rownames(set2.pca.list), get.entrez))  
-    
+  set1.entrez <- sapply(colnames(set1.pca), get.entrez)
+  set1.pca.list <- lapply(as.list(unique(set1.entrez)), 
+                          FUN = function(x, grp, data) data[,grp %in% x],
+                          grp = set1.entrez, data = as.data.frame(set1.pca))
+  
+  set2.entrez <- sapply(colnames(set2.pca), get.entrez)
+  set2.pca.list <- lapply(as.list(unique(set2.entrez)),
+                          FUN = function(x, grp, data) data[, grp %in% x],
+                          grp = set2.entrez, data = as.data.frame(set2.pca))
+  
   # compute canonical correlation
-  # use cancor and something else here
   cc.results <- mapply(cancor, set1.pca.list, set2.pca.list)
   
   # compute significance test
   test.results <- apply(cc.results, 2, cc.sig.test, n = nrow(getPheno(object)))
-  
+
   # compute redundancy coefs
-  redundancy.results <- mapply(cc.redundancy, 
-                               cc.res = as.list(as.data.frame(cc.results)),
-                               pca.res1 = set1.pca,
-                               pca.res2 = set2.pca, 
-                               set1.dat = split(set1.dat, object@set1@annot$entrez.id),
-                               set2.dat = split(set2.dat, object@set2@annot$entrez.id))  
+  dat1.red <- set1.pca
   
-  out <- mapply(cbind, test.results, redundancy.results)
-  out <- apply(out, 2, as.data.frame)  
-  out
+  
+  
+  
+  # get row variances
+  set1.rowvars <- ffdfdply(set1.df, FUN=function(x){
+    as.data.frame(rowVars(as.matrix(x[, -ncol(x)])))
+    }, split=set1.df$entrez.id, trace=FALSE)
+  
+  set2.rowvars <- ffdfdply(set2.df, FUN=function(x){
+    as.data.frame(rowVars(as.matrix(x[, -ncol(x)])))
+    }, split=set1.df$entrez.id, trace=FALSE)
+  
+  
+  
+  
+  
+#   redundancy.results <- mapply(cc.redundancy, 
+#                                cc.res = as.list(as.data.frame(cc.results)),
+#                                pca.res1 = set1.pca,
+#                                pca.res2 = set2.pca, 
+#                                set1.dat = split(set1.dat, object@set1@annot$entrez.id),
+#                                set2.dat = split(set2.dat, object@set2@annot$entrez.id))  
+#   
+#   out <- mapply(cbind, test.results, redundancy.results)
+#   out <- apply(out, 2, as.data.frame)  
+#   out
 }
 
 # lrt for each of CC pairs and choose how many CCs to keep

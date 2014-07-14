@@ -44,58 +44,36 @@ setMethod("getAnnot", "GDIset", function(object){
 
 setMethod("[", c("GDIset", "ANY", "ANY"), function(x, i, j, ..., drop = FALSE){
   
-  if (!is(i, 'character'))
+  if (!is(i, 'character')){
     stop('Row index must be a vector of entrez ids')
+  } else {
+    print('Please make sure you are subsetting by entrez id')
+  }
   
-  GDset1 <- new("GDset", 
-                annot = x@set1@annot[which(x@set1@annot$entrez.id %in% i)],
-                dat = as.ffdf(x@set1@dat[which(x@set1@annot$entrez.id %in% i), j, drop=FALSE]),
-                pheno = x@set1@pheno[j, , drop=FALSE],
-                platform = x@set1@platform)
- 
-  GDset2 <- new("GDset", 
-                annot = x@set2@annot[which(x@set2@annot$entrez.id %in% i)],
-                dat = as.ffdf(x@set2@dat[which(x@set2@annot$entrez.id %in% i), j, drop=FALSE]),
-                pheno = x@set2@pheno[j, , drop=FALSE],
-                platform = x@set2@platform)
-  
+  GDset1 <- x@set1[which(x@set1@annot$entrez.id %in% i), j]
+  GDset2 <- x@set2[which(x@set2@annot$entrez.id %in% i), j]
+    
   new("GDIset", set1 = GDset1, set2 = GDset2)
 })
 
 setMethod("[", c("GDIset", "missing", "ANY"), function(x, i, j, ..., drop = FALSE){
   
-  GDset1 <- new("GDset", 
-                annot = x@set1@annot,
-                dat = as.ffdf(x@set1@dat[ , j, drop=FALSE]),
-                pheno = x@set1@pheno[j, , drop=FALSE],
-                platform = x@set1@platform)
-  
-  GDset2 <- new("GDset", 
-                annot = x@set2@annot,
-                dat = as.ffdf(x@set2@dat[ , j, drop=FALSE]),
-                pheno = x@set2@pheno[j, , drop=FALSE],
-                platform = x@set2@platform)
-  
+  GDset1 <- x@set1[, j]
+  GDset2 <- x@set2[, j]  
   new("GDIset", set1 = GDset1, set2 = GDset2)
 })
 
 setMethod("[", c("GDIset", "ANY", "missing"), function(x, i, j, ..., drop = FALSE){
   
-  if (!is(i, 'character'))
-    stop('Row index must be a list of entrez ids')
+  if (!is(i, 'character')){
+    stop('Row index must be a vector of entrez ids')
+  } else {
+    print('Please make sure you are subsetting by entrez id')
+  }
   
-  GDset1 <- new("GDset", 
-                annot = x@set1@annot[which(x@set1@annot$entrez.id %in% i)],
-                dat = as.ffdf(x@set1@dat[which(x@set1@annot$entrez.id %in% i), , drop=FALSE]),
-                pheno = x@set1@pheno[ , , drop=FALSE],
-                platform = x@set1@platform)
-  
-  GDset2 <- new("GDset", 
-                annot = x@set2@annot[which(x@set2@annot$entrez.id %in% i)],
-                dat = as.ffdf(x@set2@dat[which(x@set2@annot$entrez.id %in% i),  , drop=FALSE]),
-                pheno = x@set2@pheno[ , , drop=FALSE],
-                platform = x@set2@platform)
-  
+  GDset1 <- x@set1[which(x@set1@annot$entrez.id %in% i), ]
+  GDset2 <- x@set2[which(x@set2@annot$entrez.id %in% i), ]
+    
   new("GDIset", set1 = GDset1, set2 = GDset2)
 })
 

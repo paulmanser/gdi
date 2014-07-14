@@ -77,4 +77,7 @@ test_that("Subsetting rows & cols", {
   expect_that(dim(GDset.test[1, 1]), equals(dim.test))
 })
 
+test_that("subsetting rows & cols by name", {
+  expect_that(dim(GDset.test['probe1', 'sample1']), equals(dim.test))
+})
 
