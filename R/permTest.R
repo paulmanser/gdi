@@ -5,8 +5,10 @@ permTest <- function(object, min.set1 = 5, min.set2 = 1, n.perm = 1000, lambda =
   if (!is(object, 'GDIset')) stop("object must be a 'GDIset'")
   
   # replace NAs with mean for now
-  set1.dat <- t(apply(object@set1@dat, 1, na.replace))
-  set2.dat <- t(apply(object@set2@dat, 1, na.replace))
+  set1.df <- object@set1@dat - rowMeans(object@set1@dat)
+  set2.df <- object@set2@dat - rowMeans(object@set2@dat)
+  set1.df[is.na(set1.df)] <- 0
+  set2.df[is.na(set2.df)] <- 0
   
   # create data.frames for dplyr do()
   set1.df <- data.frame(start = start(object@set1@annot),
@@ -24,14 +26,10 @@ permTest <- function(object, min.set1 = 5, min.set2 = 1, n.perm = 1000, lambda =
   int.df <- rbind(set1.df, set2.df) 
   
   # get R^2 matrices 
-  int.cov2 <- int.df %.%
-    group_by(entrez.id) %.%
-    do2(get.int.cov2)
+  int.cov2 <- mclapply(split(int.df, int.df$entrez.id), get.int.cov2)
   
   # get distance matrix using annot
-  int.dist <- int.df %.%
-    group_by(entrez.id) %.%
-    do2(get.int.dist, lambda = lambda)
+  int.dist <- mclapply(split(int.df, int.df$entrez.id), get.int.dist, lambda=lambda)
   
   # permute!
   mapply(permute.weights, int.cov2, int.dist, n.perm = n.perm)  
