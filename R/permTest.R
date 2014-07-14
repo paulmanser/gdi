@@ -62,8 +62,11 @@ get.int.dist <- function(x, lambda){
   
 }
 
-permute.weights <- function(r2.dist, n.perm){
+permute.weights <- function(r2.dist, n.perm, min.set1 = 5, min.set2 = 3){
   
+  if (nrow(r2.dist[[1]]) < min.set1  | ncol(r2.dist[[1]]) < min.set2)
+    return(NA)
+    
   r2 <- r2.dist[[1]]
   weights <- r2.dist[[2]]
   

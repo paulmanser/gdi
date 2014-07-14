@@ -32,10 +32,10 @@ GDIset.test <- GDIset(GDset1, GDset2)
 
 
 permTest(GDIset.test, n.perm = 1e4)
-
-test_that("'permTest' returns numeric", {
-  expect_that(class(permTest(GDIset.test)), equals('numeric'))
-})
+# 
+# test_that("'permTest' returns numeric", {
+#   expect_that(class(permTest(GDIset.test)), equals('numeric'))
+# })
 
 
 
