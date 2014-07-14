@@ -6,25 +6,16 @@ ccaTest <- function(object, npcs = 3){
   if (!is(object, 'GDIset')) stop("object must be a 'GDIset'")
   
   # center and replace NAs with zero for now -------------------------
-#   set1.dat <- t(apply(object@set1@dat, 1, na.replace))
-#   set2.dat <- t(apply(object@set2@dat, 1, na.replace))
-  set1.dat <- object@set1@dat - rowMeans(object@set1@dat)
-  set2.dat <- object@set2@dat - rowMeans(object@set2@dat)
-  set1.dat[is.na(set1.dat)] <- 0
-  set2.dat[is.na(set2.dat)] <- 0
+  set1.df <- object@set1@dat - rowMeans(object@set1@dat)
+  set2.df <- object@set2@dat - rowMeans(object@set2@dat)
+  set1.df[is.na(set1.df)] <- 0
+  set2.df[is.na(set2.df)] <- 0
   
   # do PCA grouped by gene -------------------------------------------
-  # PM: maybe try to speed this step up
-  pc2 <- function(x) prcomp(t(x[, (-1)]))$x[ , 1:min(npcs, nrow(x))]
-
-  # PM: use something else besides dplyr like bigmemory?
-  # get PC scores for set 1
-  set1.df <- data.frame(gs = object@set1@annot$entrez.id, set1.dat)
-  set1.pca <- set1.df %.%
-    group_by(gs) %.%
-    do2(pc2)
+  # get PC scores and redundancies
+  set1.pca <- mclapply(split(set1.df, object@set1@annot$entrez.id), pc2)
   
-  # get PC scores for set 2
+    # get PC scores for set 2
   set2.df <- data.frame(gs = object@set2@annot$entrez.id, set2.dat)
   set2.pca <- set2.df %.%
     group_by(gs) %.%
@@ -49,23 +40,11 @@ ccaTest <- function(object, npcs = 3){
   out
 }
 
-
-do2 <- function (.data, .f, ...) {
-  if (is.null(attr(.data, "indices"))) {
-    .data <- dplyr:::grouped_df_impl(.data, attr(.data, "vars"), 
-                                     attr(.data, "drop"))
-  }
-  index <- attr(.data, "indices")
-  out <- vector("list", length(index))
-  for (i in seq_along(index)) {
-    subs <- .data[index[[i]] + 1L, , drop = FALSE]
-    out[[i]] <- .f(subs, ...)
-  }
-  nms <- as.character(attr(.data, "labels")[[1]])
-  setNames(out, nms)
-}
-
-
+pca.r2 <- function(z){
+  out <- list()
+  out$scores <- prcomp(t(z$x[ , 1:min(npcs, nrow(z))]
+                            
+                            
 # lrt for each of CC pairs and choose how many CCs to keep
 cc.sig.test <- function(object, n){
   npcs.set1 <- nrow(object[2]$xcoef)

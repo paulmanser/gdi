@@ -16,8 +16,6 @@ Collate: generics.R
 Depends: stats,
          methods,
          matrixStats,
-         dplyr,
-         gsubfn,
          org.Hs.eg.db,
          GenomicRanges,
          AnnotationHub,
