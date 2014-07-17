@@ -59,22 +59,23 @@ ccaTest <- function(object, npcs = 3){
   # compute significance test
   test.results <- apply(cc.results, 2, cc.sig.test, n = nrow(getPheno(object)))
 
-  # compute redundancy coefs
-  dat1.red <- set1.pca
-  
-  
-  
-  
-  # get row variances
-  set1.rowvars <- ffdfdply(set1.df, FUN=function(x){
-    as.data.frame(rowVars(as.matrix(x[, -ncol(x)])))
-    }, split=set1.df$entrez.id, trace=FALSE)
-  
-  set2.rowvars <- ffdfdply(set2.df, FUN=function(x){
-    as.data.frame(rowVars(as.matrix(x[, -ncol(x)])))
-    }, split=set1.df$entrez.id, trace=FALSE)
-  
-  
+  return(test.results)
+#   # compute redundancy coefs
+#   dat1.red <- set1.pca
+#   
+#   
+#   
+#   
+#   # get row variances
+#   set1.rowvars <- ffdfdply(set1.df, FUN=function(x){
+#     as.data.frame(rowVars(as.matrix(x[, -ncol(x)])))
+#     }, split=set1.df$entrez.id, trace=FALSE)
+#   
+#   set2.rowvars <- ffdfdply(set2.df, FUN=function(x){
+#     as.data.frame(rowVars(as.matrix(x[, -ncol(x)])))
+#     }, split=set1.df$entrez.id, trace=FALSE)
+#   
+#   
   
   
   
