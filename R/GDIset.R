@@ -115,18 +115,24 @@ consolidate <- function(object){
   set1.include <- which(genes[[1]] %in% has.both)
   set2.include <- which(genes[[2]] %in% has.both)
   
-  set1.dat <- object@set1@dat[set1.include, ]
-  set1.annot <- object@set1@annot[set1.include, ]
+  set1.annot <- object@set1@annot[set1.include]
+  set2.annot <- object@set2@annot[set2.include]
 
-  set2.dat <- object@set2@dat[set2.include, ]
-  set2.annot <- object@set2@annot[set2.include, ]
+  subs1 <- 1:nrow(object@set1@dat) %in% set1.include
+  subs2 <- 1:nrow(object@set2@dat) %in% set2.include
   
-  GDset1 <- GDset(dat = as.ffdf(set1.dat),
+  set1.dat <- subset(object@set1@dat, subset=subs1)
+  set2.dat <- subset(object@set2@dat, subset=subs2)
+  
+  rownames(set1.dat) <- rownames(object@set1@dat)[set1.include]
+  rownames(set2.dat) <- rownames(object@set2@dat)[set2.include]
+  
+  GDset1 <- GDset(dat = set1.dat,
                   annot = set1.annot,
                   pheno = object@set1@pheno,
                   platform = object@set1@platform)
   
-  GDset2 <- GDset(dat = as.ffdf(set2.dat),
+  GDset2 <- GDset(dat = set2.dat,
                   annot = set2.annot,
                   pheno = object@set2@pheno,
                   platform = object@set2@platform)
