@@ -7,15 +7,19 @@ ccaTest <- function(object, npcs = 3){
   
   # center and replace NAs with zero for now -------------------------
   mean.center <- function(x){
-    z <- scale(x[-length(x)], scale=FALSE)
+    z <- as.numeric(scale(x, scale=FALSE))
     z[is.na(z)] <- 0
-    as.data.frame(z)
+    z
   }
   
   set1.df <- object@set1@dat
-  set1.df$dummy <- ff(factor(1:nrow(set1.df)))
-  set1.df <- ffdfdply(x=set1.df, split=set1.df$dummy, BATCHBYTES=5e5,
+  
+  ffdfrowapply(X=set1.df, FUN=mean.center)  
+  
+  
+  set1.df <- ffdfdply(x=set1.df, split=as.character(set1.df$dummy), BATCHBYTES=1e5,
                       FUN=mean.center, trace=FALSE)
+
   set1.df$entrez.id <- ff(factor(object@set1@annot$entrez.id))
   
   set2.df <- object@set2@dat
@@ -122,3 +126,24 @@ cc.redundancy <- function(cc.res, pca.res1, pca.res2, set1.dat, set2.dat){
   return(out)
 }
 
+ffdfrowapply <- function(X, FUN){    
+
+  stopifnot(is.ffdf(X))    
+  xchunks <- chunk(X)    
+  result <- NULL    
+       
+  for (i in xchunks){                     
+    res.chunk <- t(apply(as.matrix(X[i, ]), 1, FUN))
+    colnames(res.chunk) <- colnames(X)
+    res.chunk <- as.ffdf(data.frame(res.chunk))
+    result <- ffdfappend(result, res.chunk)
+  }
+
+  result
+}
+
+  
+  
+  
+  
+  
