@@ -48,6 +48,8 @@ cc.sig.test <- function(object, n){
   results.df <- data.frame(chisq.stat, df, p.values)  
 }
 
+
+
 # compute redundancy coefs
 cc.redundancy <- function(cc.res, pca.res1, pca.res2, set1.df, set2.df){
   # add redundancy coefficient  
