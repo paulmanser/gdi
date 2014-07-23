@@ -41,11 +41,13 @@ ccaTest <- function(object, npcs = 3){
   set1.pca.list <- lapply(as.list(unique(set1.entrez)), 
                           FUN = function(x, grp, data) data[,grp %in% x],
                           grp = set1.entrez, data = as.data.frame(set1.pca))
+  names(set1.pca.list) <- unique(set1.entrez)
   
   set2.entrez <- sapply(colnames(set2.pca), get.entrez)
   set2.pca.list <- lapply(as.list(unique(set2.entrez)),
                           FUN = function(x, grp, data) data[, grp %in% x],
                           grp = set2.entrez, data = as.data.frame(set2.pca))
+  names(set2.pca.list) <- unique(set2.entrez)
   
   # compute canonical correlation
   cc.results <- mapply(cancor, set1.pca.list, set2.pca.list)
