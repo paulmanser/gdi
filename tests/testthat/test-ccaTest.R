@@ -18,7 +18,6 @@ expData <- as.ffdf(expData)
 
 pData <- data.frame(batch = rep(1:4, 2), 
                     region = rep(c("DFC", "CBC"), each=4))
-pData <- pData
 
 rownames(pData) <- colnames(expData)
 
