@@ -50,42 +50,46 @@ ccaTest <- function(object, npcs = 3){
   names(set2.pca.list) <- unique(set2.entrez)
   
   # compute canonical correlation
-  cc.results <- mapply(cancor, set1.pca.list, set2.pca.list)
+  cc.results <- mcmapply(cancor, set1.pca.list, set2.pca.list)
   
   # compute significance test
   test.results <- apply(cc.results, 2, cc.sig.test, n = nrow(getPheno(object)))
 
-  return(test.results)
-#   # compute redundancy coefs
-#   dat1.red <- set1.pca
-#   
-#   
-#   
-#   
-#   # get row variances
-#   set1.rowvars <- ffdfdply(set1.df, FUN=function(x){
-#     as.data.frame(rowVars(as.matrix(x[, -ncol(x)])))
-#     }, split=set1.df$entrez.id, trace=FALSE)
-#   
-#   set2.rowvars <- ffdfdply(set2.df, FUN=function(x){
-#     as.data.frame(rowVars(as.matrix(x[, -ncol(x)])))
-#     }, split=set1.df$entrez.id, trace=FALSE)
-#   
-#   
-  
-  
-  
-#   redundancy.results <- mapply(cc.redundancy, 
-#                                cc.res = as.list(as.data.frame(cc.results)),
-#                                pca.res1 = set1.pca,
-#                                pca.res2 = set2.pca, 
-#                                set1.dat = split(set1.dat, object@set1@annot$entrez.id),
-#                                set2.dat = split(set2.dat, object@set2@annot$entrez.id))  
-#   
-#   out <- mapply(cbind, test.results, redundancy.results)
-#   out <- apply(out, 2, as.data.frame)  
-#   out
+  # compute redundancy coefs
+
+  set1.v <- ffdfrowapply(subset(set1.df, select=1:(ncol(set1.df)-1)), var)
+  set1.v <- as.data.frame(set1.v)
+  set2.v <- ffdfrowapply(subset(set2.df, select=1:(ncol(set2.df)-1)), var)
+  set2.v <- as.data.frame(set2.v)
+                                      
+  redundancy <- foreach(e.id=colnames(cc.results)) %do% {
+    
+    set1.scores <- as.matrix(set1.pca.list[[e.id]]) %*% cc.results[, e.id]$xcoef
+    set2.scores <- as.matrix(set2.pca.list[[e.id]]) %*% cc.results[, e.id]$ycoef
+    
+    set1.subs <- which(object@set1@annot$entrez.id %in% e.id)
+    set2.subs <- which(object@set2@annot$entrez.id %in% e.id)
+    
+    set1.dat <- set1.df[set1.subs, 1:(ncol(set1.df)-1)]
+    set2.dat <- set2.df[set2.subs, 1:(ncol(set2.df)-1)]
+    
+    set1.comm  <- cor(t(set1.dat), set1.scores)^2
+    set2.comm  <- cor(t(set2.dat), set2.scores)^2
+    n.ccs <- length(cc.results[, e.id]$cor)
+    
+    set1.r2 <- colSums((set1.v[set1.subs] * set1.comm)/sum(set1.v[set1.subs]))
+    set2.r2 <- colSums((set2.v[set2.subs] * set2.comm)/sum(set2.v[set2.subs]))
+    set1.redundancy <- set1.r2[1:n.ccs]*(cc.results[, e.id]$cor^2)
+    set2.redundancy <- set2.r2[1:n.ccs]*(cc.results[, e.id]$cor^2)
+    out <- cbind(set1.redundancy, set2.redundancy)
+    out    
+  }
+
+  out <- mapply(cbind, test.results, redundancy)
+  out <- apply(out, 2, as.data.frame)  
+  out
 }
+
 
 # lrt for each of CC pairs and choose how many CCs to keep
 cc.sig.test <- function(object, n){
@@ -125,8 +129,11 @@ ffdfrowapply <- function(X, FUN){
   result <- NULL    
        
   for (i in xchunks){                     
-    res.chunk <- t(apply(as.matrix(X[i, ]), 1, FUN))
-    colnames(res.chunk) <- colnames(X)
+    res.chunk <- apply(as.matrix(X[i, ]), 1, FUN)
+    if (!is.null(dim(res.chunk))){
+      res.chunk <- t(res.chunk)
+      colnames(res.chunk) <- colnames(X)
+    }
     res.chunk <- as.ffdf(data.frame(res.chunk))
     result <- ffdfappend(result, res.chunk)
   }
