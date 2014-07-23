@@ -7,25 +7,15 @@ ccaTest <- function(object, npcs = 3){
   
   # center and replace NAs with zero for now -------------------------
   mean.center <- function(x){
-    z <- as.numeric(scale(x, scale=FALSE))
+    z <- x - mean(x)
     z[is.na(z)] <- 0
     z
   }
   
-  set1.df <- object@set1@dat
+  set1.df <- ffdfrowapply(X=object@set1@dat, FUN=mean.center)  
+  set2.df <- ffdfrowapply(X=object@set2@dat, FUN=mean.center)
   
-  ffdfrowapply(X=set1.df, FUN=mean.center)  
-  
-  
-  set1.df <- ffdfdply(x=set1.df, split=as.character(set1.df$dummy), BATCHBYTES=1e5,
-                      FUN=mean.center, trace=FALSE)
-
   set1.df$entrez.id <- ff(factor(object@set1@annot$entrez.id))
-  
-  set2.df <- object@set2@dat
-  set2.df$dummy <- ff(factor(1:nrow(set2.df)))
-  set2.df <- ffdfdply(x=set2.df, split=set2.df$dummy, BATCHBYTES=5e5,
-                      FUN=mean.center, trace=FALSE)
   set2.df$entrez.id <- ff(factor(object@set2@annot$entrez.id))
   
   # do PCA grouped by gene -------------------------------------------
