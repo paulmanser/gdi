@@ -2,8 +2,10 @@
 # Define ------------------------------------------------------------------
 
 #' @exportClass GDset 
+
+setOldClass('ffdf')
 setClass("GDset",
-         slots = c(dat = 'data.frame',
+         slots = c(dat = 'ffdf',
                    annot = "GRanges",
                    pheno = 'data.frame',
                    platform = "character"
@@ -32,7 +34,7 @@ setClass("GDset",
   if (!identical(colnames(object@dat), rownames(object@pheno))){
     stop("colnames of 'dat' must match rownames of 'pheno'")
   }
-    
+     
   return(TRUE)
 }
 
@@ -41,6 +43,10 @@ setValidity("GDset", .validGDset)
 # Constructors ------------------------------------------------------------
 
 GDset <- function(dat, annot, pheno, platform){
+  
+  if (is(dat, "data.frame"))
+    dat <- as.ff(as.matrix(dat))
+  
   new("GDset", 
       dat = dat,
       pheno = pheno,
@@ -64,24 +70,55 @@ setMethod("getDat", "GDset", function(object) object@dat)
 
 setMethod("[", c("GDset", "ANY", "ANY"),
           function(x, i, j, ..., drop = FALSE){
+            
+            if (is(i, 'numeric')){
+              i2 <- 1:nrow(x@dat) %in% i
+              new.dat <- subset(x@dat, subset=i2, select=j)
+              rownames(new.dat) <- rownames(x@dat)[i]
+            }
+            
+            if (is(i, 'character')){            
+              i2 <- rownames(x@dat) %in% i
+              new.dat <- subset(x@dat, subset=i2, select=j)
+              rownames(new.dat) <- rownames(x@dat)[i2]
+            }
+                  
             new("GDset", annot = x@annot[i], 
-                dat = x@dat[i, j, drop=FALSE],
+                dat = new.dat,
                 pheno = x@pheno[j, , drop=FALSE], 
                 platform = x@platform)  
+            
           })
 
 setMethod("[", c("GDset", "missing", "ANY"),
           function(x, i, j, ..., drop = FALSE){
+            
+            new.dat <- subset(x@dat, select = j)
+            rownames(new.dat) <- rownames(x@dat)
+            
             new("GDset", annot = x@annot, 
-                dat = x@dat[ , j, drop=FALSE],
+                dat = new.dat,
                 pheno = x@pheno[j, , drop=FALSE], 
                 platform = x@platform)  
           })
 
 setMethod("[", c("GDset", "ANY", "missing"),
           function(x, i, j, ..., drop = FALSE){
+            
+            if (is(i, 'numeric')){
+              i2 <- 1:nrow(x@dat) %in% i
+              new.dat <- subset(x@dat, subset=i2)
+              rownames(new.dat) <- rownames(x@dat)[i]
+            }
+            
+            if (is(i, 'character')){            
+              i2 <- rownames(x@dat) %in% i
+              new.dat <- subset(x@dat, subset=i2)
+              rownames(new.dat) <- rownames(x@dat)[i2]
+            }
+                        
             new("GDset", annot = x@annot[i], 
-                dat = x@dat[i, , drop=FALSE],
+                dat = new.dat,
                 pheno = x@pheno[, , drop=FALSE], 
                 platform = x@platform)  
           })

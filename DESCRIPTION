@@ -6,6 +6,7 @@ Author: Paul Manser <manserpt@vcu.edu>
 Maintainer: Paul Manser <manserpt@vcu.edu>
 Description: Provides classes and functions for integrative analyses
 License: MIT
+<<<<<<< HEAD
 Collate: generics.R 
          GDset.R 
          GDIset.R 
@@ -13,6 +14,8 @@ Collate: generics.R
          permTest.R
          annotateGRanges.R
          GDIplot.R
+=======
+>>>>>>> use_ff
 Depends: stats,
          methods,
          matrixStats,
@@ -20,5 +23,15 @@ Depends: stats,
          GenomicRanges,
          AnnotationHub,
          GenomicFeatures,
-         TxDb.Hsapiens.UCSC.hg19.knownGene
+         TxDb.Hsapiens.UCSC.hg19.knownGene,
+         ff,
+         ffbase,
+         doBy
+Collate: generics.R 
+         GDset.R 
+         GDIset.R 
+         ccaTest.R
+         permTest.R
+         annotateGRanges.R
+         GDIplot.R
 Suggests: testthat

@@ -11,6 +11,8 @@ expData <- data.frame(sample1 = 1:2, sample2 = 4:5,
                       sample3 = 8:9, sample4 = 0:1)
 row.names(expData) <- c('probe1', 'probe2')
 
+expData <- as.ffdf(expData)
+
 pData <- data.frame(batch = 1:4, region = rep(c("DFC", "CBC"), each=2))
 rownames(pData) <- colnames(expData)
 
@@ -27,6 +29,7 @@ names(annot2) <- paste0('probe', 1:3)
 expData2 <- data.frame(sample1 = 1:3, sample2 = 4:6,
                        sample3 = 8:10, sample4 = 0:2)
 rownames(expData2) <- names(annot2)
+expData2 <- as.ffdf(expData2)
 
 GDset2 <- GDset(annot = annot2, dat = expData2,
                 pheno = pData, platform = 'methy')
@@ -50,7 +53,7 @@ test_that("'getAnnot' accessor", {
 
 dat.test <- list(microarray = expData, methy = expData2)
 test_that("'getDat' accessor", {
-  expect_that(getDat(GDIset.test), equals(dat.test))
+  expect_that(identical(dat.test, getDat(GDIset.test)), equals(TRUE))
 })
 
 test_that("'getPheno' accessor", {
@@ -63,11 +66,11 @@ test_that("'getPlatform' accessor", {
 })
 
 test_that("getSet accessor for first slot", {
-  expect_that(getSet(GDIset.test, 1), equals(GDset1))
+  expect_that(identical(getSet(GDIset.test, 1), GDset1), equals(TRUE))
 })
 
 test_that("getSet accessor for second slot", {
-  expect_that(getSet(GDIset.test, 2), equals(GDset2))
+  expect_that(identical(getSet(GDIset.test, 2), GDset2), equals(TRUE))
 })
 
 # subsetting

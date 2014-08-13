@@ -1,4 +1,8 @@
 context("Testing ccaTest function")
+<<<<<<< HEAD
+=======
+options("fftempdir"=getwd())
+>>>>>>> use_ff
 set.seed(100)
 # create components to test GDset creation
 annot <- GRanges(seqnames = Rle(rep(c('chr1', 'chr8'), each=5)),
@@ -13,6 +17,7 @@ expData <- data.frame(sample1 = rnorm(10) + 1:10, sample2 = rnorm(10) + 1:10,
                       sample7 = rnorm(10), sample8 = rnorm(10))
 
 row.names(expData) <- names(annot)
+expData <- as.ffdf(expData)
 
 pData <- data.frame(batch = rep(1:4, 2), 
                     region = rep(c("DFC", "CBC"), each=4))
@@ -26,12 +31,21 @@ annot2 <- annot[1:7]
 expData2 <- expData[1:7, ]
 expData2 <- expData2 + rnorm(length(expData2))*3
 expData2[1:5, ] <- rnorm(40)
+<<<<<<< HEAD
+=======
+expData2 <- as.ffdf(expData2)
+
+>>>>>>> use_ff
 GDset2 <- GDset(annot = annot2, dat = expData2,
                 pheno = pData, platform = 'methy')
 
 GDIset.test <- GDIset(GDset1, GDset2)
 
+
 ccaTest(GDIset.test)
+
+
+
 
 test_that("'ccaTest' returns list", {
   expect_that(class(ccaTest(GDIset.test)), equals("list"))

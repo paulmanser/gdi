@@ -44,58 +44,36 @@ setMethod("getAnnot", "GDIset", function(object){
 
 setMethod("[", c("GDIset", "ANY", "ANY"), function(x, i, j, ..., drop = FALSE){
   
-  if (!is(i, 'character'))
-    stop('Row index must be a list of entrez ids')
+  if (!is(i, 'character')){
+    stop('Row index must be a vector of entrez ids')
+  } else {
+    print('Please make sure you are subsetting by entrez id')
+  }
   
-  GDset1 <- new("GDset", 
-                annot = x@set1@annot[which(x@set1@annot$entrez.id %in% i)],
-                dat = x@set1@dat[which(x@set1@annot$entrez.id %in% i), j, drop=FALSE],
-                pheno = x@set1@pheno[j, , drop=FALSE],
-                platform = x@set1@platform)
- 
-  GDset2 <- new("GDset", 
-                annot = x@set2@annot[which(x@set2@annot$entrez.id %in% i)],
-                dat = x@set2@dat[which(x@set2@annot$entrez.id %in% i), j, drop=FALSE],
-                pheno = x@set2@pheno[j, , drop=FALSE],
-                platform = x@set2@platform)
-  
+  GDset1 <- x@set1[which(x@set1@annot$entrez.id %in% i), j]
+  GDset2 <- x@set2[which(x@set2@annot$entrez.id %in% i), j]
+    
   new("GDIset", set1 = GDset1, set2 = GDset2)
 })
 
 setMethod("[", c("GDIset", "missing", "ANY"), function(x, i, j, ..., drop = FALSE){
   
-  GDset1 <- new("GDset", 
-                annot = x@set1@annot,
-                dat = x@set1@dat[ , j, drop=FALSE],
-                pheno = x@set1@pheno[j, , drop=FALSE],
-                platform = x@set1@platform)
-  
-  GDset2 <- new("GDset", 
-                annot = x@set2@annot,
-                dat = x@set2@dat[ , j, drop=FALSE],
-                pheno = x@set2@pheno[j, , drop=FALSE],
-                platform = x@set2@platform)
-  
+  GDset1 <- x@set1[, j]
+  GDset2 <- x@set2[, j]  
   new("GDIset", set1 = GDset1, set2 = GDset2)
 })
 
 setMethod("[", c("GDIset", "ANY", "missing"), function(x, i, j, ..., drop = FALSE){
   
-  if (!is(i, 'character'))
-    stop('Row index must be a list of entrez ids')
+  if (!is(i, 'character')){
+    stop('Row index must be a vector of entrez ids')
+  } else {
+    print('Please make sure you are subsetting by entrez id')
+  }
   
-  GDset1 <- new("GDset", 
-                annot = x@set1@annot[which(x@set1@annot$entrez.id %in% i)],
-                dat = x@set1@dat[which(x@set1@annot$entrez.id %in% i), , drop=FALSE],
-                pheno = x@set1@pheno[ , , drop=FALSE],
-                platform = x@set1@platform)
-  
-  GDset2 <- new("GDset", 
-                annot = x@set2@annot[which(x@set2@annot$entrez.id %in% i)],
-                dat = x@set2@dat[which(x@set2@annot$entrez.id %in% i),  , drop=FALSE],
-                pheno = x@set2@pheno[ , , drop=FALSE],
-                platform = x@set2@platform)
-  
+  GDset1 <- x@set1[which(x@set1@annot$entrez.id %in% i), ]
+  GDset2 <- x@set2[which(x@set2@annot$entrez.id %in% i), ]
+    
   new("GDIset", set1 = GDset1, set2 = GDset2)
 })
 
@@ -137,27 +115,28 @@ consolidate <- function(object){
   set1.include <- which(genes[[1]] %in% has.both)
   set2.include <- which(genes[[2]] %in% has.both)
   
-  set1.dat <- object@set1@dat[set1.include, ]
-  set1.annot <- object@set1@annot[set1.include, ]
+  set1.annot <- object@set1@annot[set1.include]
+  set2.annot <- object@set2@annot[set2.include]
 
-  set2.dat <- object@set2@dat[set2.include, ]
-  set2.annot <- object@set2@annot[set2.include, ]
+  subs1 <- 1:nrow(object@set1@dat) %in% set1.include
+  subs2 <- 1:nrow(object@set2@dat) %in% set2.include
   
-  GDset1 <- GDset(dat = set1.dat, annot = set1.annot,
+  set1.dat <- subset(object@set1@dat, subset=subs1)
+  set2.dat <- subset(object@set2@dat, subset=subs2)
+  
+  rownames(set1.dat) <- rownames(object@set1@dat)[set1.include]
+  rownames(set2.dat) <- rownames(object@set2@dat)[set2.include]
+  
+  GDset1 <- GDset(dat = set1.dat,
+                  annot = set1.annot,
                   pheno = object@set1@pheno,
                   platform = object@set1@platform)
   
-  GDset2 <- GDset(dat = set2.dat, annot = set2.annot,
+  GDset2 <- GDset(dat = set2.dat,
+                  annot = set2.annot,
                   pheno = object@set2@pheno,
                   platform = object@set2@platform)
   
   GDIset(GDset1, GDset2)   
 }
-
-
-
-
-
-
-
 

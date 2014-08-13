@@ -4,5 +4,6 @@ exportMethods(
     "show"
 )
 exportClasses(
-    "GDset" 
+    "GDset",
+    "GDIset"
 )
