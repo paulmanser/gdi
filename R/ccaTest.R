@@ -156,8 +156,6 @@ cc.redundancy <- function(cc.res, pca.res1, pca.res2, set1.df, set2.df){
   return(out)
 }
 
-<<<<<<< HEAD
-=======
 ffdfrowapply <- function(X, FUN){    
 
   stopifnot(is.ffdf(X))    
@@ -178,8 +176,3 @@ ffdfrowapply <- function(X, FUN){
 }
 
   
-  
-  
-  
-  
->>>>>>> use_ff

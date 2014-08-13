@@ -1,8 +1,6 @@
 context("Testing ccaTest function")
-<<<<<<< HEAD
-=======
 options("fftempdir"=getwd())
->>>>>>> use_ff
+
 set.seed(100)
 # create components to test GDset creation
 annot <- GRanges(seqnames = Rle(rep(c('chr1', 'chr8'), each=5)),
