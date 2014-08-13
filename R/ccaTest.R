@@ -6,7 +6,7 @@ ccaTest <- function(object, npcs = 3){
   if (!is(object, 'GDIset')) stop("object must be a 'GDIset'")
   
   # center and replace NAs with zero for now -------------------------
-<<<<<<< HEAD
+
   set1.df <- object@set1@dat - rowMeans(object@set1@dat)
   set2.df <- object@set2@dat - rowMeans(object@set2@dat)
   set1.df[is.na(set1.df)] <- 0
@@ -16,8 +16,7 @@ ccaTest <- function(object, npcs = 3){
   # get PC scores and redundancies
   set1.pca <- mclapply(split(set1.df, object@set1@annot$entrez.id), pc2, npcs=npcs)
   set2.pca <- mclapply(split(set2.df, object@set2@annot$entrez.id), pc2, npcs=npcs)
-    
-=======
+
   mean.center <- function(x){
     z <- x - mean(x)
     z[is.na(z)] <- 0
@@ -61,13 +60,11 @@ ccaTest <- function(object, npcs = 3){
                           grp = set2.entrez, data = as.data.frame(set2.pca))
   names(set2.pca.list) <- unique(set2.entrez)
   
->>>>>>> use_ff
   # compute canonical correlation
   cc.results <- mcmapply(cancor, set1.pca.list, set2.pca.list)
   
   # compute significance test
   test.results <- apply(cc.results, 2, cc.sig.test, n = nrow(getPheno(object)))
-<<<<<<< HEAD
   
   # compute redundancy coefs
   redundancy.results <- mapply(cc.redundancy, 
@@ -83,8 +80,7 @@ ccaTest <- function(object, npcs = 3){
 }
 
 pc2 <- function(z, npcs) prcomp(t(z))$x[ , 1:min(npcs, nrow(z))]                            
-                            
-=======
+
 
   # compute redundancy coefs
 
@@ -122,7 +118,6 @@ pc2 <- function(z, npcs) prcomp(t(z))$x[ , 1:min(npcs, nrow(z))]
 }
 
 
->>>>>>> use_ff
 # lrt for each of CC pairs and choose how many CCs to keep
 cc.sig.test <- function(object, n){
   npcs.set1 <- nrow(object[2]$xcoef)
