@@ -1,85 +1,54 @@
 
 
-permTest <- function(object, min.set1 = 5, min.set2 = 3, n.perm = 1000, lambda = 300){
+permTest <- function(object, communalities, n.perm = 1000, half.life = 300){
 
   if (!is(object, 'GDIset')) stop("object must be a 'GDIset'")
   
-  # replace NAs with mean for now
-  set1.df <- object@set1@dat - rowMeans(object@set1@dat)
-  set2.df <- object@set2@dat - rowMeans(object@set2@dat)
-  set1.df[is.na(set1.df)] <- 0
-  set2.df[is.na(set2.df)] <- 0
+  entrez.ids <- c(object@set1@annot$entrez.id, object@set2@annot$entrez.id)
+  unique.ids <- unique(entrez.ids)
   
-  # create data.frames for split/apply
-  set1.df <- data.frame(start = start(object@set1@annot),
-                        end = end(object@set1@annot),
-                        entrez.id = factor(object@set1@annot$entrez.id), 
-                        type = factor(rep('set1', nrow(set1.df))),
-                        set1.df)
-  
-  set2.df <- data.frame(start = start(object@set2@annot),
-                        end = end(object@set2@annot),
-                        entrez.id = factor(object@set2@annot$entrez.id), 
-                        type = factor(rep('set2', nrow(set2.df))),
-                        set2.df)
-  
-  int.df <- rbind(set1.df, set2.df) 
-  
-  # get R^2 matrices 
-  int.cov2 <- mclapply(split(int.df, int.df$entrez.id), get.int.cov2)
-  
-  # get distance matrix using annot
-  int.dist <- mclapply(split(int.df, int.df$entrez.id), get.int.dist, lambda=lambda)
-  
-  # permute!
-  perm.list <- mapply(int.cov2, int.dist, FUN=list, SIMPLIFY=FALSE)
-  mclapply(perm.list, permute.weights, n.perm = n.perm)  
-
-}
-
-
-get.int.cov2 <- function(x){
-  
-  cov(t(as.matrix(x[x$type == 'set1', -(1:4)])),
-      t(as.matrix(x[x$type == 'set2', -(1:4)])))^2
-  
-}
-
-get.int.dist <- function(x, lambda){
-  
-  # get distance from middle of exon/region for now
-  location <- (x$start + x$end)/2
-  
-  # get distances
-  dist.mat <- matrix(location[x$type == 'set1'], 
-                     nr = sum(x$type == 'set1'),
-                     nc = sum(x$type == 'set2'))
-  
-  dist.mat <- abs(sweep(dist.mat, 2, location[x$type == 'set2'], '-'))
-  
-  # apply weight function
-  exp(-dist.mat/lambda)
-  
-}
-
-permute.weights <- function(r2.dist, n.perm, min.set1 = 5, min.set2 = 3){
-  
-  if (nrow(r2.dist[[1]]) < min.set1  | ncol(r2.dist[[1]]) < min.set2)
-    return(NA)
+  out <- foreach(gene=unique.ids, .packages='gdi', .combine='c') %do% {
     
-  r2 <- r2.dist[[1]]
-  weights <- r2.dist[[2]]
-  
-  perm.stats <- numeric(n.perm)
-  orig.stat <- sum(r2 * weights)
-  
-  # permute rows and columns
-  for(jj in 1:n.perm){
-    perm.stats[jj] <- sum(r2 * weights[sample(nrow(weights)), ][ , sample(ncol(weights))])
+    # get locations of sites
+    set1.ind <- which(object@set1@annot$entrez.id %in% gene)
+    set1.loc <- (end(object@set1@annot[set1.ind]) - start(object@set1@annot[set1.ind]))/2
+    names(set1.loc) <- names(object@set1@annot[set1.ind])
+    
+    set2.ind <- which(object@set2@annot$entrez.id %in% gene)
+    set2.loc <- (end(object@set2@annot[set2.ind]) - start(object@set2@annot[set2.ind]))/2
+    names(set2.loc) <- names(object@set2@annot[set2.ind])
+    
+    # save communalities with short variable names
+    set1.comm <- communalities[[gene]]$set1
+    set2.comm <- communalities[[gene]]$set2
+    
+    # get outer product of communalities
+    comm.outer <- t(set1.comm) %*% set2.comm
+    
+    # get distance matrix 
+    dist.mat <- matrix(set1.loc, nr = length(set1.loc),
+                       nc=length(set2.loc))
+    
+    dist.mat <- abs(sweep(dist.mat, 2, set2.loc, '-'))
+    
+    # apply exponential decay function to get weights
+    lambda <- log(2)/half.life
+    weight.mat <- exp(-dist.mat*lambda)
+    obs.stat <- sum(comm.outer * weight.mat)
+    
+    # permute weights and compute stats
+    perm.stats <- numeric(n.perm)
+    for(jj in 1:n.perm){
+      perm.stats[jj] <- sum(comm.outer * weight.mat[sample(nrow(weight.mat)), ][ , sample(ncol(weight.mat))])
+    }
+    
+    perm.pval <- sum(perm.stats > obs.stat)/n.perm
+    
+    perm.pval
   }
   
-  perm.pval <- sum(perm.stats > orig.stat)/n.perm
+  names(out) <- unique.ids
+  out  
+
 }
-
-
 
