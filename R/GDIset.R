@@ -16,8 +16,9 @@ setValidity("GDIset", .validGDIset)
 
 # Constructors ------------------------------------------------------------
 
-GDIset <- function(x, y)
+GDIset <- function(x, y){
   new("GDIset", set1 = x, set2 = y)
+}
 
 # Accessors ---------------------------------------------------------------
 
