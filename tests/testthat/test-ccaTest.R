@@ -1,4 +1,4 @@
-context("Testing ccaTest function")
+# context("Testing ccaTest function")
 options("fftempdir"=getwd())
 
 set.seed(100)
@@ -29,21 +29,22 @@ annot2 <- annot[1:7]
 expData2 <- expData[1:7, ]
 expData2 <- expData2 + rnorm(length(expData2))*3
 expData2[1:5, ] <- rnorm(40)
-<<<<<<< HEAD
-=======
+
 expData2 <- as.ffdf(expData2)
 
->>>>>>> use_ff
 GDset2 <- GDset(annot = annot2, dat = expData2,
                 pheno = pData, platform = 'methy')
 
 GDIset.test <- GDIset(GDset1, GDset2)
 
 
-ccaTest(GDIset.test)
+ccatest.results <- ccaTest(GDIset.test)
 
+cca.sig.results <- t(sapply(ccatest.results,
+                            function(x) x$test.results))
 
-
+communalities <- lapply(ccatest.results,
+                        function(x) x$comm)
 
 test_that("'ccaTest' returns list", {
   expect_that(class(ccaTest(GDIset.test)), equals("list"))
