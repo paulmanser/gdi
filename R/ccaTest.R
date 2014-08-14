@@ -4,161 +4,77 @@
 ccaTest <- function(object, npcs = 3){
   
   if (!is(object, 'GDIset')) stop("object must be a 'GDIset'")
-  
-  # center and replace NAs with zero for now -------------------------
 
-  set1.df <- object@set1@dat - rowMeans(object@set1@dat)
-  set2.df <- object@set2@dat - rowMeans(object@set2@dat)
-  set1.df[is.na(set1.df)] <- 0
-  set2.df[is.na(set2.df)] <- 0
-  
-  # do PCA grouped by gene -------------------------------------------
-  # get PC scores and redundancies
-  set1.pca <- mclapply(split(set1.df, object@set1@annot$entrez.id), pc2, npcs=npcs)
-  set2.pca <- mclapply(split(set2.df, object@set2@annot$entrez.id), pc2, npcs=npcs)
+  # mean center and combine data sets -------------------------------
+  set1.df <- ffdfrowcenter(X=object@set1@dat)  
+  set2.df <- ffdfrowcenter(X=object@set2@dat)
 
-  mean.center <- function(x){
-    z <- x - mean(x)
-    z[is.na(z)] <- 0
-    z
+  set1.df$set <- ff(factor(rep('set1', nrow(set1.df))))
+  set2.df$set <- ff(factor(rep('set2', nrow(set2.df))))
+  
+  full.set <- ffdfappend(set1.df, set2.df)
+
+  # do analysis grouped by gene -------------------------------------
+  entrez.ids <- c(object@set1@annot$entrez.id, object@set2@annot$entrez.id)
+  unique.ids <- unique(entrez.ids)
+  
+  out <- foreach(gene = unique.ids, .packages='dplyr')  %do% {
+    
+    dat <- as.tbl(full.set[entrez.ids == gene, ])
+    
+    # perform PCA for each set
+    pc.out <- (dat %.%
+               group_by(set) %.%
+               do(pcs = pca(.)))$pcs
+    
+    pcs.1 <- t(pc.out[[1]]$x[, 1:min(npcs, ncol(pc.out[[1]]$x)), drop=FALSE])
+    pcs.2 <- t(pc.out[[2]]$x[, 1:min(npcs, ncol(pc.out[[2]]$x)), drop=FALSE])
+    
+    # do CCA on PC scores
+    cc.res <- cancor(t(pcs.1), t(pcs.2))
+    
+    # do significance test for CCA
+    n <- ncol(dat) - 1
+    npcs1 <- nrow(pcs.1)
+    npcs2 <- nrow(pcs.2)
+    test.stat <- -(n - 1 - .5*(npcs1+npcs2+1)) * sum(log(1-cc.res$cor^2))
+    df <- npcs1 * npcs2
+    p.value <- 1 - pchisq(test.stat, df)
+    
+    # compute redundancy for first CC
+    set1.scores <- t(pcs.1) %*% cc.res$xcoef[, 1, drop=FALSE]
+    set2.scores <- t(pcs.2) %*% cc.res$ycoef[, 1, drop=FALSE]
+    set1.comm <- cor(set1.scores, t(subset(dat, subset=set=='set1')[, -ncol(dat)]))^2
+    set2.comm <- cor(set2.scores, t(subset(dat, subset=set=='set2')[, -ncol(dat)]))^2
+    set1.redundancy <- mean(set1.comm)
+    set2.redundancy <- mean(set2.comm)
+    
+    output <- list()
+    output$test.results <- c(chisq_stat=test.stat, df=df, 
+                             p_value=p.value, 
+                             set1_r2=set1.redundancy, 
+                             set2_r2=set2.redundancy)
+    
+    output$comm <- list()
+    output$comm$set1 <- set1.comm
+    output$comm$set2 <- set2.comm
+    
+    output
   }
-  
-  set1.df <- ffdfrowapply(X=object@set1@dat, FUN=mean.center)  
-  set2.df <- ffdfrowapply(X=object@set2@dat, FUN=mean.center)
-  
-  set1.df$entrez.id <- ff(factor(object@set1@annot$entrez.id))
-  set2.df$entrez.id <- ff(factor(object@set2@annot$entrez.id))
-  
-  # do PCA grouped by gene -------------------------------------------
-  pc2 <- function(x){
-    z <- prcomp(t(x[, (-ncol(x))]))$x[ , 1:min(npcs, nrow(x))]
-    as.data.frame(z)
-  }
-  
-  pc3 <- function(x) as.data.frame(lapplyBy(~entrez.id, data=x, pc2))
-  
-  # get PC scores for set 1
-  set1.pca <- ffdfdply(x=set1.df, split=set1.df$entrez.id,
-                       BATCHBYTES=5e5, FUN=pc3, trace=FALSE)
-  
-  # get PC scores for set 2
-  set2.pca <- ffdfdply(x=set2.df, split=set2.df$entrez.id,
-                       BATCHBYTES=5e5, FUN=pc3, trace=FALSE)
-
-  # split PC scores by entrez id
-  get.entrez <- function(x) strsplit(x, '\\.')[[1]][1]
-  
-  set1.entrez <- sapply(colnames(set1.pca), get.entrez)
-  set1.pca.list <- lapply(as.list(unique(set1.entrez)), 
-                          FUN = function(x, grp, data) data[,grp %in% x],
-                          grp = set1.entrez, data = as.data.frame(set1.pca))
-  names(set1.pca.list) <- unique(set1.entrez)
-  
-  set2.entrez <- sapply(colnames(set2.pca), get.entrez)
-  set2.pca.list <- lapply(as.list(unique(set2.entrez)),
-                          FUN = function(x, grp, data) data[, grp %in% x],
-                          grp = set2.entrez, data = as.data.frame(set2.pca))
-  names(set2.pca.list) <- unique(set2.entrez)
-  
-  # compute canonical correlation
-  cc.results <- mcmapply(cancor, set1.pca.list, set2.pca.list)
-  
-  # compute significance test
-  test.results <- apply(cc.results, 2, cc.sig.test, n = nrow(getPheno(object)))
-  
-  # compute redundancy coefs
-  redundancy.results <- mapply(cc.redundancy, 
-                               cc.res = as.list(as.data.frame(cc.results)),
-                               pca.res1 = set1.pca,
-                               pca.res2 = set2.pca, 
-                               set1.df = split(set1.df, object@set1@annot$entrez.id),
-                               set2.df = split(set2.df, object@set2@annot$entrez.id))  
-  
-  out <- mapply(cbind, test.results, redundancy.results)
-  out <- apply(out, 2, as.data.frame)  
+  names(out) <- unique.ids
   out
 }
 
-pc2 <- function(z, npcs) prcomp(t(z))$x[ , 1:min(npcs, nrow(z))]                            
-
-
-  # compute redundancy coefs
-
-  set1.v <- ffdfrowapply(subset(set1.df, select=1:(ncol(set1.df)-1)), var)
-  set1.v <- as.data.frame(set1.v)
-  set2.v <- ffdfrowapply(subset(set2.df, select=1:(ncol(set2.df)-1)), var)
-  set2.v <- as.data.frame(set2.v)
-                                      
-  redundancy <- foreach(e.id=colnames(cc.results)) %do% {
-    
-    set1.scores <- as.matrix(set1.pca.list[[e.id]]) %*% cc.results[, e.id]$xcoef
-    set2.scores <- as.matrix(set2.pca.list[[e.id]]) %*% cc.results[, e.id]$ycoef
-    
-    set1.subs <- which(object@set1@annot$entrez.id %in% e.id)
-    set2.subs <- which(object@set2@annot$entrez.id %in% e.id)
-    
-    set1.dat <- set1.df[set1.subs, 1:(ncol(set1.df)-1)]
-    set2.dat <- set2.df[set2.subs, 1:(ncol(set2.df)-1)]
-    
-    set1.comm  <- cor(t(set1.dat), set1.scores)^2
-    set2.comm  <- cor(t(set2.dat), set2.scores)^2
-    n.ccs <- length(cc.results[, e.id]$cor)
-    
-    set1.r2 <- colSums((set1.v[set1.subs] * set1.comm)/sum(set1.v[set1.subs]))
-    set2.r2 <- colSums((set2.v[set2.subs] * set2.comm)/sum(set2.v[set2.subs]))
-    set1.redundancy <- set1.r2[1:n.ccs]*(cc.results[, e.id]$cor^2)
-    set2.redundancy <- set2.r2[1:n.ccs]*(cc.results[, e.id]$cor^2)
-    out <- cbind(set1.redundancy, set2.redundancy)
-    out    
-  }
-
-  out <- mapply(cbind, test.results, redundancy)
-  out <- apply(out, 2, as.data.frame)  
-  out
-}
-
-
-# lrt for each of CC pairs and choose how many CCs to keep
-cc.sig.test <- function(object, n){
-  npcs.set1 <- nrow(object[2]$xcoef)
-  npcs.set2 <- nrow(object[3]$ycoef)
-  cc.rho2 <- rev(object[1]$cor^2)
-  chisq.stat <- rev((-1) * (n - 1 - .5 * (npcs.set1 + npcs.set2 + 1)) * log(cumprod( 1 - cc.rho2 ) ))
-  df <- (npcs.set1 - 1:length(cc.rho2) + 1 ) * (npcs.set2 - 1:length(cc.rho2) + 1 )
-  p.values <- (1 - pchisq(chisq.stat, df))
-  results.df <- data.frame(chisq.stat, df, p.values)  
-}
-
-
-
-# compute redundancy coefs
-cc.redundancy <- function(cc.res, pca.res1, pca.res2, set1.df, set2.df){
-  # add redundancy coefficient  
-  set1.scores <- pca.res1 %*% cc.res$xcoef
-  set2.scores <- pca.res2 %*% cc.res$ycoef
-  set1.comm  <- cor(t(set1.df), set1.scores)^2
-  set2.comm  <- cor(t(set2.df), set2.scores)^2
-  
-  # redundancy index  
-  set1.v <- colVars(t(set1.df))
-  set2.v <- colVars(t(set2.df))
-  n.ccs <- length(cc.res$cor)
-  set1.r2 <- colSums((set1.v * set1.comm)/sum(set1.v))
-  set2.r2 <- colSums((set2.v * set2.comm)/sum(set2.v))
-  set1.redundancy <- set1.r2[1:n.ccs]*(cc.res$cor^2)
-  set2.redundancy <- set2.r2[1:n.ccs]*(cc.res$cor^2)
-  out <- cbind(set1.redundancy, set2.redundancy)
-  return(out)
-}
-
-ffdfrowapply <- function(X, FUN){    
+ffdfrowcenter <- function(X){    
 
   stopifnot(is.ffdf(X))    
   xchunks <- chunk(X)    
   result <- NULL    
        
   for (i in xchunks){                     
-    res.chunk <- apply(as.matrix(X[i, ]), 1, FUN)
+    res.chunk <- t(as.matrix(X[i, ]) - rowMeans(as.matrix(X[i, ])))
+    res.chunk[is.na(res.chunk)] <- 0
+    
     if (!is.null(dim(res.chunk))){
       res.chunk <- t(res.chunk)
       colnames(res.chunk) <- colnames(X)
@@ -170,4 +86,4 @@ ffdfrowapply <- function(X, FUN){
   result
 }
 
-  
+pca <- function(x) prcomp(t(x[, -ncol(x)]))
