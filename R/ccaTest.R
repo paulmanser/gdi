@@ -18,7 +18,7 @@ ccaTest <- function(object, npcs = 3){
   entrez.ids <- c(object@set1@annot$entrez.id, object@set2@annot$entrez.id)
   unique.ids <- unique(entrez.ids)
   
-  out <- foreach(gene = unique.ids, .packages='dplyr')  %do% {
+  out <- foreach(gene = unique.ids, .packages='gdi')  %do% {
     
     dat <- as.tbl(full.set[entrez.ids == gene, ])
     
