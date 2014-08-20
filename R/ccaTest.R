@@ -11,7 +11,7 @@ ccaTest <- function(object, npcs = 3){
     set1.df$set <- ff(factor(rep('set1', nrow(set1.df))))  
   } else {
     set1.df <- object@set1@dat - rowMeans(object@set1@dat)
-    set1.df$set <- factor(rep('set1', nrow(set1.df))))
+    set1.df$set <- factor(rep('set1', nrow(set1.df)))
   }
   
   if (is(object@set2@dat, 'ffdf')){
@@ -19,7 +19,7 @@ ccaTest <- function(object, npcs = 3){
     set2.df$set <- ff(factor(rep('set2', nrow(set2.df))))
   } else {
     set2.df <- object@set2@dat - rowMeans(object@set2@dat)
-    set2.df$set <- factor(rep('set2', nrow(set2.df))))
+    set2.df$set <- factor(rep('set2', nrow(set2.df)))
   }
   
   if (is(set1.df, 'ffdf') & is(set2.df, 'ffdf')){
