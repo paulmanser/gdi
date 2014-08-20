@@ -6,13 +6,27 @@ ccaTest <- function(object, npcs = 3){
   if (!is(object, 'GDIset')) stop("object must be a 'GDIset'")
 
   # mean center and combine data sets -------------------------------
-  set1.df <- ffdfrowcenter(X=object@set1@dat)  
-  set2.df <- ffdfrowcenter(X=object@set2@dat)
-
-  set1.df$set <- ff(factor(rep('set1', nrow(set1.df))))
-  set2.df$set <- ff(factor(rep('set2', nrow(set2.df))))
+  if (is(object@set1@dat, 'ffdf')){
+    set1.df <- ffdfrowcenter(X=object@set1@dat)
+    set1.df$set <- ff(factor(rep('set1', nrow(set1.df))))  
+  } else {
+    set1.df <- object@set1@dat - rowMeans(object@set1@dat)
+    set1.df$set <- factor(rep('set1', nrow(set1.df))))
+  }
   
-  full.set <- ffdfappend(set1.df, set2.df)
+  if (is(object@set2@dat, 'ffdf')){
+    set2.df <- ffdfrowcenter(X=object@set2@dat)
+    set2.df$set <- ff(factor(rep('set2', nrow(set2.df))))
+  } else {
+    set2.df <- object@set2@dat - rowMeans(object@set2@dat)
+    set2.df$set <- factor(rep('set2', nrow(set2.df))))
+  }
+  
+  if (is(set1.df, 'ffdf') & is(set2.df, 'ffdf')){
+    full.set <- ffdfappend(set1.df, set2.df)
+  } else {
+    full.set <- append(as.data.frame(set1.df), as.data.frame(set2.df))
+  }
 
   # do analysis grouped by gene -------------------------------------
   entrez.ids <- c(object@set1@annot$entrez.id, object@set2@annot$entrez.id)
