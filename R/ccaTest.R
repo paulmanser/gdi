@@ -25,7 +25,7 @@ ccaTest <- function(object, npcs = 3){
   if (is(set1.df, 'ffdf') & is(set2.df, 'ffdf')){
     full.set <- ffdfappend(set1.df, set2.df)
   } else {
-    full.set <- append(as.data.frame(set1.df), as.data.frame(set2.df))
+    full.set <- rbind(as.data.frame(set1.df), as.data.frame(set2.df))
   }
 
   # do analysis grouped by gene -------------------------------------
