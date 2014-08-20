@@ -29,11 +29,12 @@ ccaTest <- function(object, npcs = 3){
   }
 
   # do analysis grouped by gene -------------------------------------
-  entrez.ids <- c(object@set1@annot$entrez.id, object@set2@annot$entrez.id)
-  unique.ids <- unique(entrez.ids)
+  entrez.ids <- intersect(object@set1@annot$entrez.id, object@set2@annot$entrez.id)
   ind <- 0
   
   out <- foreach(gene = unique.ids, .packages='gdi')  %do% {
+    
+    cat(gene, ' ', ind, '\n')
     
     dat <- full.set[which(entrez.ids == gene), ]
         
@@ -82,7 +83,7 @@ ccaTest <- function(object, npcs = 3){
     output$scores$set2 <- set2.scores
     
     ind <- ind + 1
-    cat(gene, ' ', ind, '\n')
+    
     output
   }
   names(out) <- unique.ids
