@@ -73,13 +73,13 @@ setMethod("[", c("GDset", "ANY", "ANY"),
             
             if (is(i, 'numeric')){
               i2 <- 1:nrow(x@dat) %in% i
-              new.dat <- subset(x@dat, subset=i2, select=j)
+              new.dat <- subset.ffdf(x@dat, subset=i2, select=j)
               rownames(new.dat) <- rownames(x@dat)[i]
             }
             
             if (is(i, 'character')){            
               i2 <- rownames(x@dat) %in% i
-              new.dat <- subset(x@dat, subset=i2, select=j)
+              new.dat <- subset.ffdf(x@dat, subset=i2, select=j)
               rownames(new.dat) <- rownames(x@dat)[i2]
             }
                   
@@ -93,7 +93,7 @@ setMethod("[", c("GDset", "ANY", "ANY"),
 setMethod("[", c("GDset", "missing", "ANY"),
           function(x, i, j, ..., drop = FALSE){
             
-            new.dat <- subset(x@dat, select = j)
+            new.dat <- subset.ffdf(x@dat, select = j)
             rownames(new.dat) <- rownames(x@dat)
             
             new("GDset", annot = x@annot, 
@@ -107,13 +107,13 @@ setMethod("[", c("GDset", "ANY", "missing"),
             
             if (is(i, 'numeric')){
               i2 <- 1:nrow(x@dat) %in% i
-              new.dat <- subset(x@dat, subset=i2)
+              new.dat <- subset.ffdf(x@dat, subset=i2)
               rownames(new.dat) <- rownames(x@dat)[i]
             }
             
             if (is(i, 'character')){            
               i2 <- rownames(x@dat) %in% i
-              new.dat <- subset(x@dat, subset=i2)
+              new.dat <- subset.ffdf(x@dat, subset=i2)
               rownames(new.dat) <- rownames(x@dat)[i2]
             }
                         
