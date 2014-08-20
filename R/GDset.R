@@ -4,8 +4,10 @@
 #' @exportClass GDset 
 
 setOldClass('ffdf')
+setOldClass("data.frame")
+setClassUnion("data.frameORffdf", c("data.frame", "ffdf"))
 setClass("GDset",
-         slots = c(dat = 'ffdf',
+         slots = c(dat = 'data.frameORffdf',
                    annot = "GRanges",
                    pheno = 'data.frame',
                    platform = "character"
@@ -44,9 +46,6 @@ setValidity("GDset", .validGDset)
 
 GDset <- function(dat, annot, pheno, platform){
   
-  if (is(dat, "data.frame"))
-    dat <- as.ff(as.matrix(dat))
-  
   new("GDset", 
       dat = dat,
       pheno = pheno,
@@ -70,19 +69,8 @@ setMethod("getDat", "GDset", function(object) object@dat)
 
 setMethod("[", c("GDset", "ANY", "ANY"),
           function(x, i, j, ..., drop = FALSE){
-            
-            if (is(i, 'numeric')){
-              i2 <- 1:nrow(x@dat) %in% i
-              new.dat <- subset.ffdf(x@dat, subset=i2, select=j)
-              rownames(new.dat) <- rownames(x@dat)[i]
-            }
-            
-            if (is(i, 'character')){            
-              i2 <- rownames(x@dat) %in% i
-              new.dat <- subset.ffdf(x@dat, subset=i2, select=j)
-              rownames(new.dat) <- rownames(x@dat)[i2]
-            }
-                  
+
+            new.dat <- x@dat[i, j, drop=FALSE]
             new("GDset", annot = x@annot[i], 
                 dat = new.dat,
                 pheno = x@pheno[j, , drop=FALSE], 
@@ -93,8 +81,7 @@ setMethod("[", c("GDset", "ANY", "ANY"),
 setMethod("[", c("GDset", "missing", "ANY"),
           function(x, i, j, ..., drop = FALSE){
             
-            new.dat <- subset.ffdf(x@dat, select = j)
-            rownames(new.dat) <- rownames(x@dat)
+            new.dat <- new.dat <- x@dat[, j, drop=FALSE]
             
             new("GDset", annot = x@annot, 
                 dat = new.dat,
@@ -105,18 +92,9 @@ setMethod("[", c("GDset", "missing", "ANY"),
 setMethod("[", c("GDset", "ANY", "missing"),
           function(x, i, j, ..., drop = FALSE){
             
-            if (is(i, 'numeric')){
-              i2 <- 1:nrow(x@dat) %in% i
-              new.dat <- subset.ffdf(x@dat, subset=i2)
-              rownames(new.dat) <- rownames(x@dat)[i]
-            }
+            new.dat <- x@dat[i, , drop=FALSE]
             
-            if (is(i, 'character')){            
-              i2 <- rownames(x@dat) %in% i
-              new.dat <- subset.ffdf(x@dat, subset=i2)
-              rownames(new.dat) <- rownames(x@dat)[i2]
-            }
-                        
+     
             new("GDset", annot = x@annot[i], 
                 dat = new.dat,
                 pheno = x@pheno[, , drop=FALSE], 
@@ -132,8 +110,7 @@ setMethod("show", "GDset", function(object) {
   cat("  ", nrow(object@dat), "loci \n")
   cat("  ", ncol(object@dat), "samples \n")
   cat("With", ncol(object@pheno), "Covariates:\n")
-  cat(colnames(object@pheno))
-  
+  cat(colnames(object@pheno), '\n')
 })
 
 setMethod("dim", "GDset", function(x){
