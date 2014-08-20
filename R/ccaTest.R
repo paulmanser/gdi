@@ -10,7 +10,7 @@ ccaTest <- function(object, npcs = 3){
     set1.df <- ffdfrowcenter(X=object@set1@dat)
     set1.df$set <- ff(factor(rep('set1', nrow(set1.df))))  
   } else {
-    set1.df <- object@set1@dat - rowMeans(object@set1@dat)
+    set1.df <- object@set1@dat - rowMeans(object@set1@dat, na.rm=TRUE)
     set1.df$set <- factor(rep('set1', nrow(set1.df)))
   }
   
@@ -18,7 +18,7 @@ ccaTest <- function(object, npcs = 3){
     set2.df <- ffdfrowcenter(X=object@set2@dat)
     set2.df$set <- ff(factor(rep('set2', nrow(set2.df))))
   } else {
-    set2.df <- object@set2@dat - rowMeans(object@set2@dat)
+    set2.df <- object@set2@dat - rowMeans(object@set2@dat, na.rm=TRUE)
     set2.df$set <- factor(rep('set2', nrow(set2.df)))
   }
   
@@ -34,8 +34,11 @@ ccaTest <- function(object, npcs = 3){
   
   out <- foreach(gene = unique.ids, .packages='gdi')  %do% {
     
-    dat <- as.tbl(full.set[entrez.ids == gene, ])
-    
+    dat <- full.set[which(entrez.ids == gene), ]
+        
+    #mean center and replace NA's with zero (centered mean) for now
+    dat[is.na(dat)] <- 0      
+      
     # perform PCA for each set
     pc.out <- (dat %.%
                group_by(set) %.%
@@ -86,7 +89,7 @@ ffdfrowcenter <- function(X){
   result <- NULL    
        
   for (i in xchunks){                     
-    res.chunk <- t(as.matrix(X[i, ]) - rowMeans(as.matrix(X[i, ])))
+    res.chunk <- t(as.matrix(X[i, ]) - rowMeans(as.matrix(X[i, ])), na.rm=TRUE)
     res.chunk[is.na(res.chunk)] <- 0
     
     if (!is.null(dim(res.chunk))){
