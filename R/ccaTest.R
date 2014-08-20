@@ -31,6 +31,7 @@ ccaTest <- function(object, npcs = 3){
   # do analysis grouped by gene -------------------------------------
   entrez.ids <- c(object@set1@annot$entrez.id, object@set2@annot$entrez.id)
   unique.ids <- unique(entrez.ids)
+  ind <- 0
   
   out <- foreach(gene = unique.ids, .packages='gdi')  %do% {
     
@@ -61,10 +62,10 @@ ccaTest <- function(object, npcs = 3){
     # compute redundancy for first CC
     set1.scores <- t(pcs.1) %*% cc.res$xcoef[, 1, drop=FALSE]
     set2.scores <- t(pcs.2) %*% cc.res$ycoef[, 1, drop=FALSE]
-    set1.comm <- cor(set1.scores, t(subset(dat, subset=set=='set1')[, -ncol(dat)]))^2
-    set2.comm <- cor(set2.scores, t(subset(dat, subset=set=='set2')[, -ncol(dat)]))^2
-    set1.redundancy <- mean(set1.comm)
-    set2.redundancy <- mean(set2.comm)
+    set1.comm <- cor(set1.scores, t(subset(dat, subset=set=='set1')[, -ncol(dat)]))
+    set2.comm <- cor(set2.scores, t(subset(dat, subset=set=='set2')[, -ncol(dat)]))
+    set1.redundancy <- mean(set1.comm^2)
+    set2.redundancy <- mean(set2.comm^2)
     
     output <- list()
     output$test.results <- c(chisq_stat=test.stat, df=df, 
@@ -72,10 +73,16 @@ ccaTest <- function(object, npcs = 3){
                              set1_r2=set1.redundancy, 
                              set2_r2=set2.redundancy)
     
-    output$comm <- list()
-    output$comm$set1 <- set1.comm
-    output$comm$set2 <- set2.comm
+    output$sqrt_comm <- list()
+    output$sqrt_comm$set1 <- set1.comm
+    output$sqrt_comm$set2 <- set2.comm
     
+    output$scores <- list()
+    output$scores$set1 <- set1.scores
+    output$scores$set2 <- set2.scores
+    
+    ind <- ind + 1
+    cat(gene, ' ', ind, '\n')
     output
   }
   names(out) <- unique.ids
