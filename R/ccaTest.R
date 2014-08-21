@@ -44,7 +44,7 @@ ccaTest <- function(object, npcs = 3, min.set1=5, min.set2=1){
     n.sites <- table(dat$set)
     
     if (n.sites[1] < min.set1 | n.sites[2] < min.set2){
-      out.return[gene] <- NA
+      out.return[[gene]] <- NA
       cat(' omitted')
     } else {
       #mean center and replace NA's with zero (centered mean) for now
@@ -91,12 +91,11 @@ ccaTest <- function(object, npcs = 3, min.set1=5, min.set2=1){
       output$scores$set1 <- set1.scores
       output$scores$set2 <- set2.scores
       
+      out.return[[gene]] <- output
     }
     ind <- ind + 1
     cat('\n')
-    out.return[gene] <- output
   }
-  
   out.return
 }
 
