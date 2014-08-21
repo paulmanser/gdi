@@ -1,7 +1,7 @@
 ### function for simulation study of PCA dimension-reduced
 ### cross covariance test
 
-ccaTest <- function(object, npcs = 3){
+ccaTest <- function(object, npcs = 3, min.set1=5, min.set2=1){
   
   if (!is(object, 'GDIset')) stop("object must be a 'GDIset'")
 
@@ -39,54 +39,60 @@ ccaTest <- function(object, npcs = 3){
     cat(gene, ' ', ind, '\n')
     
     dat <- full.set[which(entrez.ids == gene), ]
+    n.sites <- table(dat$set)
+    
+    if (n.sites[1] < min.set1 | n.sites[2] < min.set2){
+      output <- NA
+      output
+    } else {
+      #mean center and replace NA's with zero (centered mean) for now
+      dat[is.na(dat)] <- 0      
         
-    #mean center and replace NA's with zero (centered mean) for now
-    dat[is.na(dat)] <- 0      
+      # perform PCA for each set
+      pc.out <- (dat %.%
+                 group_by(set) %.%
+                 do(pcs = pca(.)))$pcs
       
-    # perform PCA for each set
-    pc.out <- (dat %.%
-               group_by(set) %.%
-               do(pcs = pca(.)))$pcs
-    
-    pcs.1 <- t(pc.out[[1]]$x[, 1:min(npcs, ncol(pc.out[[1]]$x)), drop=FALSE])
-    pcs.2 <- t(pc.out[[2]]$x[, 1:min(npcs, ncol(pc.out[[2]]$x)), drop=FALSE])
-    
-    # do CCA on PC scores
-    cc.res <- cancor(t(pcs.1), t(pcs.2))
-    
-    # do significance test for CCA
-    n <- ncol(dat) - 1
-    npcs1 <- nrow(pcs.1)
-    npcs2 <- nrow(pcs.2)
-    test.stat <- -(n - 1 - .5*(npcs1+npcs2+1)) * sum(log(1-cc.res$cor^2))
-    df <- npcs1 * npcs2
-    p.value <- 1 - pchisq(test.stat, df)
-    
-    # compute redundancy for first CC
-    set1.scores <- t(pcs.1) %*% cc.res$xcoef[, 1, drop=FALSE]
-    set2.scores <- t(pcs.2) %*% cc.res$ycoef[, 1, drop=FALSE]
-    set1.comm <- cor(set1.scores, t(subset(dat, subset=set=='set1')[, -ncol(dat)]))
-    set2.comm <- cor(set2.scores, t(subset(dat, subset=set=='set2')[, -ncol(dat)]))
-    set1.redundancy <- mean(set1.comm^2)
-    set2.redundancy <- mean(set2.comm^2)
-    
-    output <- list()
-    output$test.results <- c(chisq_stat=test.stat, df=df, 
-                             p_value=p.value, 
-                             set1_r2=set1.redundancy, 
-                             set2_r2=set2.redundancy)
-    
-    output$sqrt_comm <- list()
-    output$sqrt_comm$set1 <- set1.comm
-    output$sqrt_comm$set2 <- set2.comm
-    
-    output$scores <- list()
-    output$scores$set1 <- set1.scores
-    output$scores$set2 <- set2.scores
-    
-    ind <- ind + 1
-    
-    output
+      pcs.1 <- t(pc.out[[1]]$x[, 1:min(npcs, ncol(pc.out[[1]]$x)), drop=FALSE])
+      pcs.2 <- t(pc.out[[2]]$x[, 1:min(npcs, ncol(pc.out[[2]]$x)), drop=FALSE])
+      
+      # do CCA on PC scores
+      cc.res <- cancor(t(pcs.1), t(pcs.2))
+      
+      # do significance test for CCA
+      n <- ncol(dat) - 1
+      npcs1 <- nrow(pcs.1)
+      npcs2 <- nrow(pcs.2)
+      test.stat <- -(n - 1 - .5*(npcs1+npcs2+1)) * sum(log(1-cc.res$cor^2))
+      df <- npcs1 * npcs2
+      p.value <- 1 - pchisq(test.stat, df)
+      
+      # compute redundancy for first CC
+      set1.scores <- t(pcs.1) %*% cc.res$xcoef[, 1, drop=FALSE]
+      set2.scores <- t(pcs.2) %*% cc.res$ycoef[, 1, drop=FALSE]
+      set1.comm <- cor(set1.scores, t(subset(dat, subset=set=='set1')[, -ncol(dat)]))
+      set2.comm <- cor(set2.scores, t(subset(dat, subset=set=='set2')[, -ncol(dat)]))
+      set1.redundancy <- mean(set1.comm^2)
+      set2.redundancy <- mean(set2.comm^2)
+      
+      output <- list()
+      output$test.results <- c(chisq_stat=test.stat, df=df, 
+                               p_value=p.value, 
+                               set1_r2=set1.redundancy, 
+                               set2_r2=set2.redundancy)
+      
+      output$sqrt_comm <- list()
+      output$sqrt_comm$set1 <- set1.comm
+      output$sqrt_comm$set2 <- set2.comm
+      
+      output$scores <- list()
+      output$scores$set1 <- set1.scores
+      output$scores$set2 <- set2.scores
+      
+      ind <- ind + 1
+      
+      output
+    }
   }
   names(out) <- unique.ids
   out
