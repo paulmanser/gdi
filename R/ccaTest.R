@@ -33,8 +33,10 @@ ccaTest <- function(object, npcs = 3, min.set1=5, min.set2=1){
   ids.in.both <- intersect(object@set1@annot$entrez.id, object@set2@annot$entrez.id)
   unique.ids <- unique(ids.in.both)
   ind <- 1
+  out.return <- list()
   
-  out <- foreach(gene = unique.ids, .packages='gdi')  %do% {
+#   out <- foreach(gene = unique.ids, .packages='gdi')  %do% {
+  for(gene in unique.ids){
     
     cat(gene, ' ', ind)
     
@@ -42,7 +44,7 @@ ccaTest <- function(object, npcs = 3, min.set1=5, min.set2=1){
     n.sites <- table(dat$set)
     
     if (n.sites[1] < min.set1 | n.sites[2] < min.set2){
-      output <- NA
+      out.return[gene] <- NA
       cat(' omitted')
     } else {
       #mean center and replace NA's with zero (centered mean) for now
@@ -92,10 +94,10 @@ ccaTest <- function(object, npcs = 3, min.set1=5, min.set2=1){
     }
     ind <- ind + 1
     cat('\n')
-    output
+    out.return[gene] <- output
   }
-  names(out) <- unique.ids
-  out
+  
+  out.return
 }
 
 ffdfrowcenter <- function(X){    
