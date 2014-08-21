@@ -29,7 +29,9 @@ ccaTest <- function(object, npcs = 3){
   }
 
   # do analysis grouped by gene -------------------------------------
-  entrez.ids <- intersect(object@set1@annot$entrez.id, object@set2@annot$entrez.id)
+  entrez.ids <- c(object@set1@annot$entrez.id, object@set2@annot$entrez.id)
+  ids.in.both <- intersect(object@set1@annot$entrez.id, object@set2@annot$entrez.id)
+  unique.ids <- unique(ids.in.both)
   ind <- 0
   
   out <- foreach(gene = unique.ids, .packages='gdi')  %do% {
