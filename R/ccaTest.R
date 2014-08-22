@@ -98,7 +98,56 @@ ccaTest <- function(object, npcs = 5, min.set1=5, min.set2=3){
     ind <- ind + 1
     cat('\n')
   }
-  out.return
+
+  # consolidate results  ---------------------------------------
+  out.final <- list()
+
+  # testing results
+  out.final$testing.results <- t(sapply(out.return, function(x){
+    if(!is.na(x)){
+      x$test.results
+    } else {
+      rep(NA, 5)
+    }
+  }))
+  
+  # set 1 cc scores
+  out.final$set1.scores <- t(sapply(out.return, function(x, n.c){
+    if(!is.na(x)){
+      x$scores$set1
+    } else {
+      rep(NA, n.c)
+    }
+  }, n.c=dim(full.set)[2]))
+
+  # set 2 cc scores
+  out.final$set2.scores <- t(sapply(out.return, function(x, n.c){
+    if(!is.na(x)){
+      x$scores$set2
+    } else {
+      rep(NA, n.c)
+    }
+  }, n.c=dim(full.set)[2]))
+
+  # set1 loadings
+  out.final$set1.loadings <- lapply(out.return, function(x){
+    if(!is.na(x)){
+      x$loadings$set1
+    } else {
+      NA
+    }
+  }, n.c=dim(full.set)[2])
+
+  # set 2 loadings
+  out.final$set2.loadings <- t(sapply(out.return, function(x){
+    if(!is.na(x)){
+      x$loadings$set2
+    } else {
+      NA
+    }
+  })
+  out.final
+
 }
 
 ffdfrowcenter <- function(X){    
