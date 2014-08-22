@@ -136,10 +136,10 @@ ccaTest <- function(object, npcs = 5, min.set1=5, min.set2=3){
     } else {
       NA
     }
-  }, n.c=dim(full.set)[2])
+  })
 
   # set 2 loadings
-  out.final$set2.loadings <- t(sapply(out.return, function(x){
+  out.final$set2.loadings <- lapply(out.return, function(x){
     if(!is.na(x)){
       x$loadings$set2
     } else {
