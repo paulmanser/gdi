@@ -1,7 +1,7 @@
 ### function for simulation study of PCA dimension-reduced
 ### cross covariance test
 
-ccaTest <- function(object, npcs = 3, min.set1=5, min.set2=1){
+ccaTest <- function(object, npcs = 5, min.set1=5, min.set2=3){
   
   if (!is(object, 'GDIset')) stop("object must be a 'GDIset'")
 
@@ -61,7 +61,7 @@ ccaTest <- function(object, npcs = 3, min.set1=5, min.set2=1){
       # do CCA on PC scores
       cc.res <- cancor(t(pcs.1), t(pcs.2))
       
-      # do significance test for CCA
+      # do bartlett's significance test for CCA
       n <- ncol(dat) - 1
       npcs1 <- nrow(pcs.1)
       npcs2 <- nrow(pcs.2)
@@ -72,10 +72,12 @@ ccaTest <- function(object, npcs = 3, min.set1=5, min.set2=1){
       # compute redundancy for first CC
       set1.scores <- t(pcs.1) %*% cc.res$xcoef[, 1, drop=FALSE]
       set2.scores <- t(pcs.2) %*% cc.res$ycoef[, 1, drop=FALSE]
-      set1.comm <- cor(set1.scores, t(subset(dat, subset=set=='set1')[, -ncol(dat)]))
-      set2.comm <- cor(set2.scores, t(subset(dat, subset=set=='set2')[, -ncol(dat)]))
-      set1.redundancy <- mean(set1.comm^2)
-      set2.redundancy <- mean(set2.comm^2)
+      
+      set1.load <- cor(set1.scores, t(subset(dat, subset=set=='set1')[, -ncol(dat)]))
+      set2.load <- cor(set2.scores, t(subset(dat, subset=set=='set2')[, -ncol(dat)]))
+      
+      set1.redundancy <- mean(cor(set2.scores, t(subset(dat, subset=set=='set1')[, -ncol(dat)]))^2)
+      set2.redundancy <- mean(cor(set1.scores, t(subset(dat, subset=set=='set2')[, -ncol(dat)]))^2)
       
       output <- list()
       output$test.results <- c(chisq_stat=test.stat, df=df, 
@@ -83,9 +85,9 @@ ccaTest <- function(object, npcs = 3, min.set1=5, min.set2=1){
                                set1_r2=set1.redundancy, 
                                set2_r2=set2.redundancy)
       
-      output$sqrt_comm <- list()
-      output$sqrt_comm$set1 <- set1.comm
-      output$sqrt_comm$set2 <- set2.comm
+      output$loadings <- list()
+      output$loadings$set1 <- set1.load
+      output$loadings$set2 <- set2.load
       
       output$scores <- list()
       output$scores$set1 <- set1.scores
