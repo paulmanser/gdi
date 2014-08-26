@@ -83,7 +83,7 @@ ccaTest <- function(object, npcs = 5, min.set1=5, min.set2=3){
       cc.exp.set2 <- sum(set2.vars*(set2.load^2)/sum(set2.vars))
       
       set1.redundancy <- cc.exp.set1 * cc.res$cor[1]^2
-      set2.redundancy <- cc.exp.set2 * cc.res.cor[1]^2
+      set2.redundancy <- cc.exp.set2 * cc.res$cor[1]^2
       
       # consolidate results into a list --------------------------------------      
       output <- list()
