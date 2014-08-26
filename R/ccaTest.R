@@ -61,7 +61,7 @@ ccaTest <- function(object, npcs = 5, min.set1=5, min.set2=3){
       # do CCA on PC scores
       cc.res <- cancor(t(pcs.1), t(pcs.2))
       
-      # do bartlett's significance test for CCA
+      # do LRT w/ bartlett correction for CCA
       n <- ncol(dat) - 1
       npcs1 <- nrow(pcs.1)
       npcs2 <- nrow(pcs.2)
@@ -69,16 +69,23 @@ ccaTest <- function(object, npcs = 5, min.set1=5, min.set2=3){
       df <- npcs1 * npcs2
       p.value <- 1 - pchisq(test.stat, df)
       
-      # compute redundancy for first CC
+      # compute redundancy for first CC --------------------------------------
       set1.scores <- t(pcs.1) %*% cc.res$xcoef[, 1, drop=FALSE]
       set2.scores <- t(pcs.2) %*% cc.res$ycoef[, 1, drop=FALSE]
       
       set1.load <- cor(set1.scores, t(subset(dat, subset=set=='set1')[, -ncol(dat)]))
       set2.load <- cor(set2.scores, t(subset(dat, subset=set=='set2')[, -ncol(dat)]))
       
-      set1.redundancy <- mean(cor(set2.scores, t(subset(dat, subset=set=='set1')[, -ncol(dat)]))^2)
-      set2.redundancy <- mean(cor(set1.scores, t(subset(dat, subset=set=='set2')[, -ncol(dat)]))^2)
+      set1.vars <- rowVars(as.matrix(subset(dat, subset=set=='set1', select=1:(ncol(dat)-1))))
+      set2.vars <- rowVars(as.matrix(subset(dat, subset=set=='set2', select=1:(ncol(dat)-1))))
       
+      cc.exp.set1 <- sum(set1.vars*(set1.load^2)/sum(set1.vars))
+      cc.exp.set2 <- sum(set2.vars*(set2.load^2)/sum(set2.vars))
+      
+      set1.redundancy <- cc.exp.set1 * cc.res$cor[1]^2
+      set2.redundancy <- cc.exp.set2 * cc.res.cor[1]^2
+      
+      # consolidate results into a list --------------------------------------      
       output <- list()
       output$test.results <- c(chisq_stat=test.stat, df=df, 
                                p_value=p.value, 
