@@ -163,18 +163,3 @@ na2mean <- function(x){
 }
 pca <- function(x) prcomp(t(x[, -ncol(x)]))
 
-
-
-
-
-aa=lapply(asdf$testing.results,
-          function(x){
-            if (!is.na(x[1])){
-              x[1, 3]
-            } else {
-              NA
-            }
-          })
-
-
-
