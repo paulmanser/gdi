@@ -1,24 +1,22 @@
 ### function for simulation study of PCA dimension-reduced
 ### cross covariance test
 
-ccaTest <- function(object, npcs = 5, min.set1=5, min.set2=3){
+ccaTest <- function(object, npcs = 5, min.set1=5, min.set2=3, cc.pvalue.threshold=.1){
   
   if (!is(object, 'GDIset')) stop("object must be a 'GDIset'")
 
-  # mean center and combine data sets -------------------------------
+  # combine data sets -------------------------------
+  set1.df <- object@set1@dat
   if (is(object@set1@dat, 'ffdf')){
-    set1.df <- ffdfrowcenter(X=object@set1@dat)
     set1.df$set <- ff(factor(rep('set1', nrow(set1.df))))  
   } else {
-    set1.df <- object@set1@dat - rowMeans(object@set1@dat, na.rm=TRUE)
     set1.df$set <- factor(rep('set1', nrow(set1.df)))
   }
   
+  set2.df <- object@set2@dat
   if (is(object@set2@dat, 'ffdf')){
-    set2.df <- ffdfrowcenter(X=object@set2@dat)
     set2.df$set <- ff(factor(rep('set2', nrow(set2.df))))
   } else {
-    set2.df <- object@set2@dat - rowMeans(object@set2@dat, na.rm=TRUE)
     set2.df$set <- factor(rep('set2', nrow(set2.df)))
   }
   
@@ -39,62 +37,64 @@ ccaTest <- function(object, npcs = 5, min.set1=5, min.set2=3){
   for(gene in unique.ids){
     
     cat(gene, ' ', ind)
-    
+
     dat <- full.set[which(entrez.ids == gene), ]
     n.sites <- table(dat$set)
+    set1 <- as.matrix(dat[dat$set == 'set1', -ncol(dat)])
+    set2 <- as.matrix(dat[dat$set == 'set2', -ncol(dat)])
+    
+    set1 <- apply(set1, 1, na2mean)
+    set2 <- apply(set2, 1, na2mean)
     
     if (n.sites[1] < min.set1 | n.sites[2] < min.set2){
       out.return[[gene]] <- NA
       cat(' omitted')
     } else {
-      #mean center and replace NA's with zero (centered mean) for now
-      dat[is.na(dat)] <- 0      
         
       # perform PCA for each set
-      pc.out <- (dat %.%
-                 group_by(set) %.%
-                 do(pcs = pca(.)))$pcs
-      
-      pcs.1 <- t(pc.out[[1]]$x[, 1:min(npcs, ncol(pc.out[[1]]$x)), drop=FALSE])
-      pcs.2 <- t(pc.out[[2]]$x[, 1:min(npcs, ncol(pc.out[[2]]$x)), drop=FALSE])
+      pca.set1 <- prcomp(set1)
+      pca.set2 <- prcomp(set2)
       
       # do CCA on PC scores
-      cc.res <- cancor(t(pcs.1), t(pcs.2))
+      cc.res <- cancor(pca.set1$x[, 1:min.set1], pca.set2$x[, 1:min.set2])
       
       # do LRT w/ bartlett correction for CCA
-      n <- ncol(dat) - 1
-      npcs1 <- nrow(pcs.1)
-      npcs2 <- nrow(pcs.2)
-      test.stat <- -(n - 1 - .5*(npcs1+npcs2+1)) * sum(log(1-cc.res$cor^2))
-      df <- npcs1 * npcs2
-      p.value <- 1 - pchisq(test.stat, df)
+      n <- ncol(set1)
+      cc.rho2 <- rev(cc.res$cor^2)
+      test.stat <- (-1)*(n - 1 - .5 * (min.set1 + min.set2 + 1)) * log(cumprod(1 - cc.rho2))
+      df <- (min.set1 - length(cc.rho2):1 + 1 ) * (min.set2 - length(cc.rho2):1 + 1 )
+      p.value <- (1 - pchisq(test.stat, df))
       
-      # compute redundancy for first CC --------------------------------------
-      set1.scores <- t(pcs.1) %*% cc.res$xcoef[, 1, drop=FALSE]
-      set2.scores <- t(pcs.2) %*% cc.res$ycoef[, 1, drop=FALSE]
+      test.stat <- rev(test.stat)
+      df <- rev(df)
+      p.value <- rev(p.value)      
       
-      set1.load <- cor(set1.scores, t(subset(dat, subset=set=='set1')[, -ncol(dat)]))
-      set2.load <- cor(set2.scores, t(subset(dat, subset=set=='set2')[, -ncol(dat)]))
+      n.ccs <- min(min.set1, min.set2)
       
-      set1.vars <- rowVars(as.matrix(subset(dat, subset=set=='set1', select=1:(ncol(dat)-1))))
-      set2.vars <- rowVars(as.matrix(subset(dat, subset=set=='set2', select=1:(ncol(dat)-1))))
+      # compute canonical covariate scores and loadings --------------------------------------
       
-      cc.exp.set1 <- sum(set1.vars*(set1.load^2)/sum(set1.vars))
-      cc.exp.set2 <- sum(set2.vars*(set2.load^2)/sum(set2.vars))
+      set1.scores <- pca.set1$x[, 1:min.set1, drop=FALSE] %*% cc.res$xcoef[, 1:n.ccs, drop=FALSE]
+      set2.scores <- pca.set2$x[, 1:min.set2, drop=FALSE] %*% cc.res$ycoef[, 1:n.ccs, drop=FALSE]
+      set1.loads <- cor(set1, set1.scores)
+      set2.loads <- cor(set2, set2.scores)
       
-      set1.redundancy <- cc.exp.set1 * cc.res$cor[1]^2
-      set2.redundancy <- cc.exp.set2 * cc.res$cor[1]^2
+      # redundancy index  
+      dat2cc.set1 <- colSums((colVars(set1) * set1.loads^2)/sum(colVars(set1)))
+      dat2cc.set2 <- colSums((colVars(set2) * set2.loads^2)/sum(colVars(set2)))
+      set1.redundancy <- dat2cc.set1*(cc.res$cor^2)[1:n.ccs]
+      set2.redundancy <- dat2cc.set2*(cc.res$cor^2)[1:n.ccs]
       
       # consolidate results into a list --------------------------------------      
       output <- list()
-      output$test.results <- c(chisq_stat=test.stat, df=df, 
-                               p_value=p.value, 
-                               set1_r2=set1.redundancy, 
-                               set2_r2=set2.redundancy)
+      output$test.results <- cbind(chisq_stat=test.stat, 
+                                   df=df, 
+                                   p_value=p.value, 
+                                   set1_r2=set1.redundancy, 
+                                   set2_r2=set2.redundancy)
       
       output$loadings <- list()
-      output$loadings$set1 <- set1.load
-      output$loadings$set2 <- set2.load
+      output$loadings$set1 <- set1.loads
+      output$loadings$set2 <- set2.loads
       
       output$scores <- list()
       output$scores$set1 <- set1.scores
@@ -110,13 +110,13 @@ ccaTest <- function(object, npcs = 5, min.set1=5, min.set2=3){
   out.final <- list()
 
   # testing results
-  out.final$testing.results <- t(sapply(out.return, function(x){
+  out.final$testing.results <- lapply(out.return, function(x){
     if(!is.na(x)){
       x$test.results
     } else {
       rep(NA, 5)
     }
-  }))
+  })
   
   # set 1 cc scores
   out.final$set1.scores <- t(sapply(out.return, function(x, n.c){
@@ -157,25 +157,24 @@ ccaTest <- function(object, npcs = 5, min.set1=5, min.set2=3){
 
 }
 
-ffdfrowcenter <- function(X){    
-
-  stopifnot(is.ffdf(X))    
-  xchunks <- chunk(X)    
-  result <- NULL    
-       
-  for (i in xchunks){                     
-    res.chunk <- t(as.matrix(X[i, ]) - rowMeans(as.matrix(X[i, ])), na.rm=TRUE)
-    res.chunk[is.na(res.chunk)] <- 0
-    
-    if (!is.null(dim(res.chunk))){
-      res.chunk <- t(res.chunk)
-      colnames(res.chunk) <- colnames(X)
-    }
-    res.chunk <- as.ffdf(data.frame(res.chunk))
-    result <- ffdfappend(result, res.chunk)
-  }
-
-  result
+na2mean <- function(x){
+  x[is.na(x)] <- mean(na.omit(x))
+  return(x)
 }
-
 pca <- function(x) prcomp(t(x[, -ncol(x)]))
+
+
+
+
+
+aa=lapply(asdf$testing.results,
+          function(x){
+            if (!is.na(x[1])){
+              x[1, 3]
+            } else {
+              NA
+            }
+          })
+
+
+
