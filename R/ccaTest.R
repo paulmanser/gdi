@@ -59,7 +59,7 @@ ccaTest <- function(object, npcs = 5, min.set1=5, min.set2=3, cc.pvalue.threshol
       cc.res <- cancor(pca.set1$x[, 1:min.set1], pca.set2$x[, 1:min.set2])
       
       # do LRT w/ bartlett correction for CCA
-      n <- ncol(set1)
+      n <- nrow(set1)
       cc.rho2 <- rev(cc.res$cor^2)
       test.stat <- (-1)*(n - 1 - .5 * (min.set1 + min.set2 + 1)) * log(cumprod(1 - cc.rho2))
       df <- (min.set1 - length(cc.rho2):1 + 1 ) * (min.set2 - length(cc.rho2):1 + 1 )
