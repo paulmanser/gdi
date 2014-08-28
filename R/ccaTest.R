@@ -119,22 +119,22 @@ ccaTest <- function(object, npcs = 5, min.set1=5, min.set2=3, cc.pvalue.threshol
   })
   
   # set 1 cc scores
-  out.final$set1.scores <- t(sapply(out.return, function(x, n.c){
+  out.final$set1.scores <- lapply(out.return, function(x, n.c){
     if(!is.na(x)){
       x$scores$set1
     } else {
       rep(NA, n.c)
     }
-  }, n.c=dim(full.set)[2]))
+  }, n.c=dim(full.set)[2])
 
   # set 2 cc scores
-  out.final$set2.scores <- t(sapply(out.return, function(x, n.c){
+  out.final$set2.scores <- lapply(out.return, function(x, n.c){
     if(!is.na(x)){
       x$scores$set2
     } else {
       rep(NA, n.c)
     }
-  }, n.c=dim(full.set)[2]))
+  }, n.c=dim(full.set)[2])
 
   # set1 loadings
   out.final$set1.loadings <- lapply(out.return, function(x){
