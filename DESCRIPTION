@@ -25,11 +25,4 @@ Depends: stats,
          ffbase,
          dplyr,
          foreach
-Collate: generics.R 
-         GDset.R 
-         GDIset.R 
-         ccaTest.R
-         permTest.R
-         annotateGRanges.R
-         GDIplot.R
 Suggests: testthat
