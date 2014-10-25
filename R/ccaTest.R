@@ -56,25 +56,25 @@ ccaTest <- function(object, npcs = 5, min.set1=5, min.set2=3, cc.pvalue.threshol
       pca.set2 <- prcomp(set2)
       
       # do CCA on PC scores
-      cc.res <- cancor(pca.set1$x[, 1:min.set1], pca.set2$x[, 1:min.set2])
+      cc.res <- cancor(pca.set1$x[, 1:npcs], pca.set2$x[, 1:npcs])
       
       # do LRT w/ bartlett correction for CCA
       n <- nrow(set1)
       cc.rho2 <- rev(cc.res$cor^2)
-      test.stat <- (-1)*(n - 1 - .5 * (min.set1 + min.set2 + 1)) * log(cumprod(1 - cc.rho2))
-      df <- (min.set1 - length(cc.rho2):1 + 1 ) * (min.set2 - length(cc.rho2):1 + 1 )
+      test.stat <- (-1)*(n - 1 - .5 * (npcs + npcs + 1)) * log(cumprod(1 - cc.rho2))
+      df <- (npcs - length(cc.rho2):1 + 1 ) * (npcs - length(cc.rho2):1 + 1 )
       p.value <- (1 - pchisq(test.stat, df))
       
       test.stat <- rev(test.stat)
       df <- rev(df)
       p.value <- rev(p.value)      
       
-      n.ccs <- min(min.set1, min.set2)
+      n.ccs <- npcs
       
       # compute canonical covariate scores and loadings --------------------------------------
       
-      set1.scores <- pca.set1$x[, 1:min.set1, drop=FALSE] %*% cc.res$xcoef[, 1:n.ccs, drop=FALSE]
-      set2.scores <- pca.set2$x[, 1:min.set2, drop=FALSE] %*% cc.res$ycoef[, 1:n.ccs, drop=FALSE]
+      set1.scores <- pca.set1$x[, 1:npcs, drop=FALSE] %*% cc.res$xcoef[, 1:n.ccs, drop=FALSE]
+      set2.scores <- pca.set2$x[, 1:npcs, drop=FALSE] %*% cc.res$ycoef[, 1:n.ccs, drop=FALSE]
       set1.loads <- cor(set1, set1.scores)
       set2.loads <- cor(set2, set2.scores)
       
