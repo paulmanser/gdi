@@ -1,13 +1,20 @@
 
 
-permTest <- function(object, cca.results, n.perm = 1000, half.life = 300){
+permTest <- function(object, cca.results = NULL, n.perm = 1000, half.life = 300){
 
   if (!is(object, 'GDIset')) stop("object must be a 'GDIset'")
   
-  incl.ind <- which(unlist(lapply(cca.res$testing.results, function(x) !is.na(x[1]))))
-  unique.ids <- names(cca.results$testing.results)[incl.ind]
-  # set up parallel stuff here
-  
+  if (!is.null(cca.results)){
+    cat('Performing permutation test on communalities \n')
+    incl.ind <- which(unlist(lapply(cca.res$testing.results, function(x) !is.na(x[1]))))
+    unique.ids <- names(cca.results$testing.results)[incl.ind]
+  }else{
+    cat('Performing permutation test on R-squared values \n')
+    set1.names <- names(table(getAnnot(object)[[1]]$entrez.id) > 3)
+    set2.names <- names(table(getAnnot(object)[[2]]$entrez.id) > 3)
+    unique.ids <- intersect(getAnnot(object)[[1]]$entrez.id,
+                            getAnnot(object)[[2]]$entrez.id)
+  }
     
   out <- foreach(gene=unique.ids, .packages='gdi', .combine='c') %dopar% {
     
@@ -20,12 +27,19 @@ permTest <- function(object, cca.results, n.perm = 1000, half.life = 300){
     set2.loc <- (end(object@set2@annot[set2.ind]) + start(object@set2@annot[set2.ind]))/2
     names(set2.loc) <- names(object@set2@annot[set2.ind])
     
-    # save communalities with short variable names
-    set1.comm <- cca.results$set1.loadings[[gene]][, 1, drop=FALSE]^2
-    set2.comm <- cca.results$set2.loadings[[gene]][, 1, drop=FALSE]^2
+    if (!is.null(cca.results)){
+      # save communalities with short variable names
+      set1.comm <- cca.results$set1.loadings[[gene]][, 1, drop=FALSE]^2
+      set2.comm <- cca.results$set2.loadings[[gene]][, 1, drop=FALSE]^2
+      
+      # get outer product of communalities
+      comm.outer <- set1.comm %*% t(set2.comm)
     
-    # get outer product of communalities
-    comm.outer <- set1.comm %*% t(set2.comm)
+    }else{
+      # compute R^2 matrix from actual data
+      comm.outer <- cor(t(object@set1@dat[set1.ind, ]),
+                        t(object@set2@dat[set2.ind, ]))^2
+    }    
     
     # get distance matrix 
     dist.mat <- matrix(set1.loc, nr = length(set1.loc),
